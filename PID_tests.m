@@ -1,8 +1,9 @@
-function [u,y,z,awup]=PID_tests(T,K,Ti,Td,Tiawup)
+function [u,y,z,awup]=PID_tests(T,K,Ti,Td,Tv)
 [a,b,umin,umax,~,~]= obiekt2();
 na=length(a); nb=length(b); 
 kp=max(na,nb)+1; kp=5; kk=200;
 u(1:kp-1)=0; u(kp:kk)=0; 
+uw(1:kp-1)=0; uw(kp:kk)=0; 
 y(1:kp-1)=0; y(kp:kk)=0; 
 e(1:kp-1)=0; e(kp:kk)=0; 
 z(1:kp-1)=0; z(kp:kk)=0; % yzad
@@ -18,18 +19,20 @@ for k=kp:kk;
     %symulacja obiektu
     y(k)=0;
     for i=1:nb
-        y(k)=y(k)+b(i)*max(min(u(k-i),umax),umin);
+        uw(k-i) = max(min(u(k-i),umax),umin);
+        y(k)=y(k)+b(i)*uw(k-1);
     end;
     for i=1:na
         y(k)=y(k)-a(i)*y(k-i);
     end;
+    awup(k-1) = uw(k-1)-u(k-1);
     
     e(k)=z(k)-y(k);
     %e(k)=0.1;          % do wyznaczania czasu zdwojenia (PI)
     %e(k)=e(k-1)+0.1;   % do wyznaczania czasu wyprzedzenia (PD)
     
     % Podejscie pierwsze do wyznaczenia wartosci sterowania
-    Tibis = 1/(1/Ti + awup(k-1)/Tiawup);
+    Tibis = 1/(1/Ti + awup(k-1)/Tv);
     r2 = K*Td/T;                    
     r1 = K*(T/(2*Tibis) - 2*Td/T - 1); 
     r0 = K*(1 + T/(2*Tibis) + Td/T);   
@@ -38,13 +41,10 @@ for k=kp:kk;
     % Podejscie drugie do wyznaczenia wartosci sterowania
     up(k) = K*e(k);
     ud(k) = K*Td*(e(k)-e(k-1))/T;
-    ui(k) = ui(k-1)+(K/Ti+(K/Tiawup)*awup(k-1))*T*(e(k-1)+e(k))/2;
+    ui(k) = ui(k-1)+K*(1/Ti+awup(k-1)/Tv)*T*(e(k-1)+e(k))/2;
     u2(k) = up(k)+ud(k)+ui(k);
     
-    u(k) = u1(k);
-    
-    awup(k)=max(min(u(k),umax),umin)-u(k);
-    %u(k)=max(min(u(k),umax),umin);    
+    u(k) = u2(k);
 end;
 end
 
@@ -78,7 +78,7 @@ function [a,b,umin,umax,dumax,Tp] = obiekt3()
     Tp = 0;
     a = [-1.6375, 0.67003];
     b = [0, 0, 0.035, 0.0307];
-    umin = -1;
-    umax = 1;
+    umin = -1.0;
+    umax = 1.0;
     dumax = Inf;
 end
