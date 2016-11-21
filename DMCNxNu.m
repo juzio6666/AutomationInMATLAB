@@ -1,29 +1,54 @@
 function DMCNxNu(S,N,Nu)
-    u1 = [zeros(2,100), [ones(1,900); zeros(1,900)]];
-    u2 = [zeros(2,100), [zeros(1,900); ones(1,900)]];
-    y1 = 0*u1;
-    y2 = 0*u2;
-    for k = 10:1000
-        y1(:,k) = object(u1(:,k-1), y1(:,k-1));
-        y2(:,k) = object(u2(:,k-1), y2(:,k-1));
-    end
+    object = @object2;
     
     kmax = 1000;
-    kstart = 200;
-    N = 4;
+    kstart = max(na,nb)+1;
+    ny = 2;
+    nu = 2;
+    u(1:nu,1:kstart-1)=0; y(1:ny,1:kstart-1)=0;
+
+    N = 3;
     Nu = 2;
-    S(:,1,1) = y1(1,100:200);
-    S(:,1,2) = y1(2,100:200);
-    S(:,2,1) = y2(1,100:200);
-    S(:,2,2) = y2(2,100:200);
+    D=100; 
+    wsplambda=[0.075 0.0075]; 
+    wspsi=[1 1];
+    
+    for k=1:D
+        i1=min(k,na); i2=min(k-1,nb);
+        for m=1:ny
+            for n=1:nu
+                s(m,n,k)=0.0;
+                for i=1:i1;
+                    s(m,n,k)=s(m,n,k)+b(m,n,i);
+                end;
+                for i=1:i2;
+                    s(m,n,k)=s(m,n,k)-a(m,i)*s(m,n,k-i);
+                end;
+            end;
+        end;
+    end;
+    for m=1:ilwy;
+        for n=1:ilwe
+            s(m,n,D+1:D+Hp)=s(m,n,D);
+        end;
+    end;
+
+    
+    for m=1:ny;
+        y(m,k)=0.0;
+        for n=1:nu;
+            for i=1:nb;
+                y(m,k)=y(m,k)+b(m,n,i)*u(n,k-i);
+            end;
+        end;
+        for i=1:na;
+            y(m,k)=y(m,k)-a(m,i)*y(m,k-i);
+        end;
+    end;
+    
     yzad = [10, 5]'*ones(1,kmax+N+1);
     
-    D = size(S,1);
-    ny = size(S,2);
-    nu = size(S,3);
-    for i = (D+1):(D-1+N)
-        S(i,:,:) = S(D,:,:);
-    end
+    
     nY = N*ny;
     ndU = Nu*nu;
     y = zeros(ny,0);
@@ -85,7 +110,39 @@ function DMCNxNu(S,N,Nu)
     plot(1:kmax, y);
 end
 
-function [y] = object(u,y)
+function [y] = object1(u,y)
     y(1) = y(1)*0.9+u(1)*0.1;
     y(2) = y(2)*0.8+u(2)*0.2;
+end
+
+function [y] = object2(u,y)
+    ilwe=2; ilwy=2;
+    Tp=0.03;%okres próbkowania
+    K=1; T=0.7; alfa=exp(-Tp/T); B11=K*(1-alfa); A11=-alfa; %G11=1/0.7s+1
+    K=5; T=0.3; alfa=exp(-Tp/T); B12=K*(1-alfa); A12=-alfa; %G12=5/0.3s+1    
+    K=1; T=0.5; alfa=exp(-Tp/T); B21=K*(1-alfa); A21=-alfa; %G21=1/0.5s+1    
+    K=2; T=0.4; alfa=exp(-Tp/T); B22=K*(1-alfa); A22=-alfa; %G22=2/0.4s+1
+    
+    %sprowadzenie do wspólnego mianownika (równania ró¿nicowe)
+    na=2; nb=2;
+    %a(m,i), m - wyjœcie, i - przesuniêcie
+    a(1,1)=A11+A12; a(1,2)=A11*A12;
+    a(2,1)=A21+A22; a(2,2)=A21*A22;
+    %b(m,n,i), m - wyjœcie, n - wejœcie, i - przesuniêcie
+    b(1,1,1)=B11; b(1,1,2)=B11*A12;
+    b(1,2,1)=B12; b(1,2,2)=B12*A11;
+    b(2,1,1)=B21; b(2,1,2)=B21*A22;
+    b(2,2,1)=B22; b(2,2,2)=B22*A21;
+    
+    for m=1:ilwy;
+        y(m,k)=0.0;
+        for n=1:ilwe;
+            for i=1:nb;
+                y(m,k)=y(m,k)+b(m,n,i)*u(n,k-i);
+            end;
+        end;
+        for i=1:na;
+            y(m,k)=y(m,k)-a(m,i)*y(m,k-i);
+        end;
+    end;
 end
