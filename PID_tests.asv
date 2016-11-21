@@ -1,4 +1,4 @@
-function [u,y,z,awup]=PID_tests(T,K,Ti,Td,Tiawup)
+function [u,y,z,awup]=PID_tests(T,K,Ti,Td,Kawup)
 [a,b,umin,umax,~,~]= obiekt2();
 na=length(a); nb=length(b); 
 kp=max(na,nb)+1; kp=5; kk=200;
@@ -29,28 +29,27 @@ for k=kp:kk;
     %e(k)=e(k-1)+0.1;   % do wyznaczania czasu wyprzedzenia (PD)
     
     % Podejscie pierwsze do wyznaczenia wartosci sterowania
-    Tibis = 1/(1/Ti + awup(k-1)/Tiawup);
+    Tiawup = K/Ti+
     r2 = K*Td/T;                    
-    r1 = K*(T/(2*Tibis) - 2*Td/T - 1); 
-    r0 = K*(1 + T/(2*Tibis) + Td/T);   
+    r1 = K*(T/(2*Ti) - 2*Td/T - 1); 
+    r0 = K*(1 + T/(2*Ti) + Td/T);   
     u1(k) = u(k-1)+r2*e(k-2)+r1*e(k-1)+r0*e(k);
     
     % Podejscie drugie do wyznaczenia wartosci sterowania
     up(k) = K*e(k);
     ud(k) = K*Td*(e(k)-e(k-1))/T;
-    ui(k) = ui(k-1)+(K/Ti+(K/Tiawup)*awup(k-1))*T*(e(k-1)+e(k))/2;
+    ui(k) = ui(k-1)+(K/Ti+Kawup*awup(k-1))*T*(e(k-1)+e(k))/2;
     u2(k) = up(k)+ud(k)+ui(k);
     
     u(k) = u1(k);
     
-    awup(k)=max(min(u(k),umax),umin)-u(k);
-    %u(k)=max(min(u(k),umax),umin);    
+    awup(k)=max(min(u(k),umax),umin)-u(k);    
 end;
 end
 
 function [a,b,umin,umax,dumax,Tp] = obiekt1()
     Tp = 0.03;
-    K=3; T=30;
+    K=3; T=10;
     [ld,md]=c2dm(K,[T 1],Tp,'zoh');
     b(1)=ld(2);
     a(1)=md(2);
@@ -63,7 +62,7 @@ function [a,b,umin,umax,dumax,Tp] = obiekt2()
     Tp = 0.03;
     K=2; 
     T1=0.03; 
-    T2=0.5;
+    T2=0.1;
     [ld,md]=c2dm(K,[T1*T2 T1+T2 1],Tp,'zoh');
     b(1)=ld(2);
     b(2)=ld(3);
