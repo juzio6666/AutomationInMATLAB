@@ -1,4 +1,4 @@
-function [u,y,z,awup]=PID_tests(T,K,Ti,Td,Tv)
+function [u,y,z,awup,test]=PID_tests(T,K,Ti,Td,Tv)
 [a,b,umin,umax,~,~]= obiekt2();
 na=length(a); nb=length(b); 
 kp=max(na,nb)+1; kp=5; kk=200;
@@ -14,13 +14,14 @@ u1(1:kk)=0;
 u2(1:kk)=0;
 awup(1:kk)=0;
 z(10:kk) = 1;
+test(1:kk)=0;
 
 for k=kp:kk;
     %symulacja obiektu
     y(k)=0;
     for i=1:nb
         uw(k-i) = max(min(u(k-i),umax),umin);
-        y(k)=y(k)+b(i)*uw(k-1);
+        y(k)=y(k)+b(i)*uw(k-i);
     end;
     for i=1:na
         y(k)=y(k)-a(i)*y(k-i);
@@ -33,6 +34,7 @@ for k=kp:kk;
     
     % Podejscie pierwsze do wyznaczenia wartosci sterowania
     Tibis = 1/(1/Ti + awup(k-1)/Tv);
+    test(k)=Tibis;
     r2 = K*Td/T;                    
     r1 = K*(T/(2*Tibis) - 2*Td/T - 1); 
     r0 = K*(1 + T/(2*Tibis) + Td/T);   
