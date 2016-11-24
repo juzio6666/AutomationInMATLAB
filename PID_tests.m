@@ -1,5 +1,5 @@
-function [u,y,z,awup,test]=PID_tests(T,K,Ti,Td,Tv)
-[a,b,umin,umax,~,~]= obiekt3();
+function [u,y,z,awup]=PID_tests(T,K,Ti,Td,Tv)
+[a,b,umin,umax,~,~]= obiekt4();
 na=length(a); nb=length(b); 
 kp=max(na,nb)+1; kp=5; kk=200;
 u(1:kp-1)=0; u(kp:kk)=0; 
@@ -13,7 +13,7 @@ ui(1:kk)=0;
 u1(1:kk)=0;
 u2(1:kk)=0;
 awup(1:kk)=0;
-z(10:kk) = 1;
+z(10:kk) = 1000;
 test(1:kk)=0;
 
 for k=kp:kk;
@@ -36,7 +36,6 @@ for k=kp:kk;
     
     % Podejscie pierwsze do wyznaczenia wartosci sterowania
     Tibis = 1/(1/Ti + awup(k-1)/Tv);
-    test(k)=Tibis;
     r2 = K*Td/T;                    
     r1 = K*(T/(2*Tibis) - 2*Td/T - 1); 
     r0 = K*(1 + T/(2*Tibis) + Td/T);   
@@ -48,7 +47,7 @@ for k=kp:kk;
     ui(k) = ui(k-1)+K*(1/Ti+awup(k-1)/Tv)*T*(e(k-1)+e(k))/2;
     u2(k) = up(k)+ud(k)+ui(k);
     
-    u(k) = u2(k);
+    u(k) = u1(k);
     uw(k) = max(min(u(k),umax),umin);
     awup(k) = uw(k)-u(k);
     u(k) = uw(k);
@@ -87,6 +86,21 @@ function [a,b,umin,umax,dumax,Tp] = obiekt3()
     Tp = 2;
     a = [-1.6375, 0.67003];
     b = [0, 0, 0.035, 0.0307];
+    umin = -Inf;
+    umax = Inf;
+    dumax = Inf;
+end
+
+function [a,b,umin,umax,dumax,Tp] = obiekt4()
+    Tp = 0.01;
+    K=20.0; 
+    T1=1; 
+    T2=0.3;
+    [ld,md]=c2dm(K,[T1*T2 T1+T2 1],Tp,'zoh');
+    b(1)=ld(2);
+    b(2)=ld(3);
+    a(1)=md(2);
+    a(2)=md(3);
     umin = -Inf;
     umax = Inf;
     dumax = Inf;
