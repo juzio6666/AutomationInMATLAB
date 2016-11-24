@@ -1,39 +1,109 @@
 clear all;
-T  = 0.03;
-K  = 1.0;
-Ti = 0.1;
-Td = 0.0;
-umin = -1.0;
-umax =  1.0;
-[u0,y0,z0,awup0]=PID_tests(T,K,Ti,Td,Inf);
-[u1,y1,z1,awup1,test]=PID_tests(T,K,Ti,Td,0.1);
+red   = [0.75, 0.00, 0.00];
+green = [0.00, 0.75, 0.00];
+blue  = [0.00, 0.00, 0.75];
+T  = 2;
+K  = 1.2;
+Ti = 20;
+Td = 5;
+[u0,y0,z0,~]=PID_tests(T,K,Ti,Td,Inf);
+
+dK = 0.5;
+[u0,y0,z0,~]=PID_tests(T,K,Inf,0,Inf);
+[u1,y1,~,~]=PID_tests(T,K-dK,Inf,0,Inf);
+[u2,y2,~,~]=PID_tests(T,K+dK,Inf,0,Inf);
 
 figure;
 t = (1:length(u0));
 hold on;
-stairs(t*T,ones(1,length(t))*umax,'k-.');
-stairs(t*T,u0(t),'b--');
-stairs(t*T,u1(t),'r--');
-stairs(t*T,max(min(umax,u0(t)),umin),'b');
-stairs(t*T,max(min(umax,u1(t)),umin),'r');
+stairs(t,u2(t),'Color', blue);
+stairs(t,u0(t),'Color', red);
+stairs(t,u1(t),'Color', green);
 xlabel('k');
 ylabel('u');
-legend('ograniczenie umax=1.0',...
-       'spodziewane u(k) (bez anti-windup)',...
-       'spodziewane u(k) (z anti-windup)',...
-       'faktyczne u(k) (bez anti-windup)',...
-       'faktyczne u(k) (z anti-windup)');
-
-figure; 
-stairs(t*T,test(t));
+legend(sprintf('K=%3.1f',K-dK),...
+       sprintf('K=%3.1f',K),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('K=%3.1f',K+dK)'...       'faktyczne u(k) (z anti-windup)'
+);
    
 figure; 
 hold on;
-stairs(t*T,z1(t),'k:');
-stairs(t*T,y0(t),'b');
-stairs(t*T,y1(t),'r');
+stairs(t,z0(t),'k:');
+stairs(t,y2(t),'Color',blue);
+stairs(t,y0(t),'Color',red);
+stairs(t,y1(t),'Color',green);
 xlabel('k');
 ylabel('y_{zad}, y');
 legend('zadana',...
-       'y(k) (bez anti-windup)',...
-       'y(k) (z anti-windup)');
+       sprintf('K=%3.1f',K-dK),...
+       sprintf('K=%3.1f',K),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('K=%3.1f',K+dK)'...       'faktyczne u(k) (z anti-windup)'
+);
+
+
+[u0,y0,z0,~]=PID_tests(T,K,Ti,0,Inf);
+[u1,y1,~,~]=PID_tests(T,K,Ti*0.75,0,Inf);
+[u2,y2,~,~]=PID_tests(T,K,Ti*2,0,Inf);
+
+figure;
+t = (1:length(u0));
+hold on;
+stairs(t,u2(t),'Color', blue);
+stairs(t,u0(t),'Color', red);
+stairs(t,u1(t),'Color', green);
+xlabel('k');
+ylabel('u');
+legend(sprintf('Ti=%3.1f',Ti*2),...
+       sprintf('Ti=%3.1f',Ti),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Ti=%3.1f',Ti*0.75)'...       'faktyczne u(k) (z anti-windup)'
+);
+   
+figure; 
+hold on;
+stairs(t,z0(t),'k:');
+stairs(t,y2(t),'Color',blue);
+stairs(t,y0(t),'Color',red);
+stairs(t,y1(t),'Color',green);
+xlabel('k');
+ylabel('y_{zad}, y');
+legend('zadana',...
+       sprintf('Ti=%3.1f',Ti*2),...
+       sprintf('Ti=%3.1f',Ti),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Ti=%3.1f',Ti*0.75)'...       'faktyczne u(k) (z anti-windup)'
+);
+
+
+
+
+close all;
+
+[u0,y0,z0,~]=PID_tests(T,K,Inf,Td,Inf);
+[u1,y1,~,~]=PID_tests(T,K,Inf,Td-4,Inf);
+[u2,y2,~,~]=PID_tests(T,K,Inf,Td+5,Inf);
+
+figure;
+t = (1:length(u0));
+hold on;
+stairs(t,u2(t),'Color', blue);
+stairs(t,u0(t),'Color', red);
+stairs(t,u1(t),'Color', green);
+xlabel('k');
+ylabel('u');
+legend(sprintf('Td=%3.1f',Td-4),...
+       sprintf('Td=%3.1f',Td),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Td=%3.1f',Td+5)'...       'faktyczne u(k) (z anti-windup)'
+);
+   
+figure; 
+hold on;
+stairs(t,z0(t),'k:');
+stairs(t,y2(t),'Color',blue);
+stairs(t,y0(t),'Color',red);
+stairs(t,y1(t),'Color',green);
+xlabel('k');
+ylabel('y_{zad}, y');
+legend('zadana',...
+       sprintf('Td=%3.1f',Td-4),...
+       sprintf('Td=%3.1f',Td),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Td=%3.1f',Td+5)'...       'faktyczne u(k) (z anti-windup)'
+);

@@ -1,5 +1,5 @@
 function [u,y,z,awup,test]=PID_tests(T,K,Ti,Td,Tv)
-[a,b,umin,umax,~,~]= obiekt2();
+[a,b,umin,umax,~,~]= obiekt3();
 na=length(a); nb=length(b); 
 kp=max(na,nb)+1; kp=5; kk=200;
 u(1:kp-1)=0; u(kp:kk)=0; 
@@ -19,14 +19,16 @@ test(1:kk)=0;
 for k=kp:kk;
     %symulacja obiektu
     y(k)=0;
+    %fprintf('y(k) = ');
     for i=1:nb
-        uw(k-i) = max(min(u(k-i),umax),umin);
         y(k)=y(k)+b(i)*uw(k-i);
+    %    fprintf('+%f*u(k-%d)',b(i),i);
     end;
     for i=1:na
         y(k)=y(k)-a(i)*y(k-i);
+    %    fprintf('-%f*y(k-%d)',a(i),i);
     end;
-    awup(k-1) = uw(k-1)-u(k-1);
+    %fprintf('\n');
     
     e(k)=z(k)-y(k);
     %e(k)=0.1;          % do wyznaczania czasu zdwojenia (PI)
@@ -47,6 +49,9 @@ for k=kp:kk;
     u2(k) = up(k)+ud(k)+ui(k);
     
     u(k) = u2(k);
+    uw(k) = max(min(u(k),umax),umin);
+    awup(k) = uw(k)-u(k);
+    u(k) = uw(k);
 end;
 end
 
@@ -71,16 +76,18 @@ function [a,b,umin,umax,dumax,Tp] = obiekt2()
     b(2)=ld(3);
     a(1)=md(2);
     a(2)=md(3);
-    umin=-1.0;
-    umax=1.0;
+    %umin=-1.0;
+    %umax=1.0;
+    umin=-Inf;
+    umax=Inf;
     dumax=0.01;
 end
 
 function [a,b,umin,umax,dumax,Tp] = obiekt3()
-    Tp = 0;
+    Tp = 2;
     a = [-1.6375, 0.67003];
     b = [0, 0, 0.035, 0.0307];
-    umin = -1.0;
-    umax = 1.0;
+    umin = -Inf;
+    umax = Inf;
     dumax = Inf;
 end
