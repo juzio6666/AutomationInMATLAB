@@ -1,0 +1,344 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>zieglernichols</title><meta name="generator" content="MATLAB 8.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-11-25"><meta name="DC.source" content="zieglernichols.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">parametry do wprowadzenia w oscylacje</a></li><li><a href="#3">parametry PID wyznaczone na podstawie Z-N z polskiej wikipedii</a></li></ul></div><pre class="codeinput">clear <span class="string">all</span>;
+close <span class="string">all</span>;
+T = 0.05;
+T_obj = 0.001;
+Wzm=1.0;
+T1=0.5;
+T2=0.2;
+[ld,md]=c2dm(Wzm,[T1*T2 T1+T2 1],T,<span class="string">'zoh'</span>);
+b(1)=ld(2);
+b(2)=ld(3);
+a(1)=md(2);
+a(2)=md(3);
+
+[ld_obj,md_obj]=c2dm(Wzm,[T1*T2 T1+T2 1],T_obj,<span class="string">'zoh'</span>);
+b_obj(1)=ld_obj(2);
+b_obj(2)=ld_obj(3);
+a_obj(1)=md_obj(2);
+a_obj(2)=md_obj(3);
+fprintf(<span class="string">'a[0][0]    = %+.20f;\n'</span>,a_obj(1));
+fprintf(<span class="string">'a[0][1]    = %+.20f;\n'</span>,a_obj(2));
+fprintf(<span class="string">'b[0][0][0] = %+.20f;\n'</span>,b_obj(1));
+fprintf(<span class="string">'b[0][0][1] = %+.20f;\n'</span>,b_obj(2));
+na=length(a); nb=length(b);
+
+kp=5; kk=1000;
+
+u(1:kk)=0;
+y(1:kk)=0;
+e(1:kk)=0;
+z(1:kk)=0; <span class="comment">% yzad</span>
+up(1:kk)=0;
+ud(1:kk)=0;
+ui(1:kk)=0;
+
+z(kp:kk) = 50;
+
+kr = 3;
+ur(1:kr)=0;
+yr(1:kr)=0;
+er(1:kr)=0;
+
+ko = 150;
+uo(1:ko)=0;
+yo(1:ko)=0;
+eo(1:ko)=0;
+
+<span class="keyword">while</span> (ko*T_obj&lt;=10);
+    yo(ko)=0;
+    <span class="keyword">for</span> i=1:nb
+        yo(ko)=yo(ko)+b_obj(i)*uo(ko-i);
+    <span class="keyword">end</span>;
+    <span class="keyword">for</span> i=1:na
+        yo(ko)=yo(ko)-a_obj(i)*yo(ko-i);
+    <span class="keyword">end</span>;
+    <span class="keyword">if</span>((ko-1)*T_obj == 1.0)
+        yo(ko) = yo(ko)+100*T_obj;
+    <span class="keyword">end</span>
+
+    uo(ko) = 0;
+    ko = ko+1;
+<span class="keyword">end</span>;
+
+<span class="keyword">while</span> (kr*T&lt;=10);
+    yr(kr)=0;
+    <span class="keyword">for</span> i=1:nb
+        yr(kr)=yr(kr)+b(i)*ur(kr-i);
+    <span class="keyword">end</span>;
+    <span class="keyword">for</span> i=1:na
+        yr(kr)=yr(kr)-a(i)*yr(kr-i);
+    <span class="keyword">end</span>;
+    <span class="keyword">if</span>((kr-1)*T == 1.0)
+        yr(kr) = yr(kr)+100*T;
+    <span class="keyword">end</span>
+
+    ur(kr) = 0;
+    kr = kr+1;
+<span class="keyword">end</span>;
+figure;
+plot((1:length(yo))*T_obj,yo,<span class="string">'r'</span>); hold <span class="string">on</span>;
+plot((1:length(yr))*T,yr,<span class="string">'b'</span>)
+
+figure;
+stairs((1:length(uo))*T_obj,uo,<span class="string">'r'</span>); hold <span class="string">on</span>;
+stairs((1:length(ur))*T,ur,<span class="string">'b'</span>)
+
+<span class="keyword">return</span>
+</pre><pre class="codeoutput">a[0][0]    = -1.99301447786001540000;
+a[0][1]    = +0.99302444293323511000;
+b[0][0][0] = +0.00000498834956643098;
+b[0][0][1] = +0.00000497672365329382;
+</pre><img vspace="5" hspace="5" src="zieglernichols_01.png" alt=""> <img vspace="5" hspace="5" src="zieglernichols_02.png" alt=""> <h2>parametry do wprowadzenia w oscylacje<a name="2"></a></h2><pre class="codeinput">Ku = 27.0; <span class="comment">% wzmocnienie krytyczne</span>
+Tu = 0.387; <span class="comment">% okres oscylacji biorac pod uwage czas probkowania T</span>
+</pre><h2>parametry PID wyznaczone na podstawie Z-N z polskiej wikipedii<a name="3"></a></h2><pre class="codeinput">typ_reg = <span class="string">'PID'</span>;
+<span class="keyword">if</span> strcmp(typ_reg, <span class="string">'P'</span>)
+    K = 0.5*Ku;
+    Ti = Inf;
+    Td = 0;
+<span class="keyword">elseif</span> strcmp(typ_reg, <span class="string">'PI'</span>)
+<span class="comment">%     K = 0.45*Ku;</span>
+<span class="comment">%     Ti = Tu/1.2;</span>
+    K = Ku/3.2;
+    Ti = 2.2*Tu;
+    Td = 0;
+<span class="keyword">elseif</span> strcmp(typ_reg, <span class="string">'PID'</span>)
+    K = 0.6*Ku;
+    Ti = 0.5*Tu;
+    Td = 0.125*Tu;
+<span class="comment">%    K = Ku/2.2;</span>
+<span class="comment">%    Ti = 2.2*Tu;</span>
+<span class="comment">%    Td = Tu/6.3;</span>
+<span class="keyword">else</span>
+    K = 27.0; <span class="comment">% na symulacji wychodzi 29.8</span>
+    Ti = Inf;
+    Td = 0;
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> k=kp:kk;
+    <span class="comment">%symulacja obiektu</span>
+    y(k)=0;
+    <span class="keyword">for</span> i=1:nb
+        y(k)=y(k)+b(i)*u(k-i);
+    <span class="keyword">end</span>;
+    <span class="keyword">for</span> i=1:na
+        y(k)=y(k)-a(i)*y(k-i);
+    <span class="keyword">end</span>;
+
+    e(k)=z(k)-y(k);
+
+    up(k) = K*e(k);
+    ui(k) = ui(k-1)+K/Ti*T*(e(k-1)+e(k))/2;
+    ud(k) = K*Td*(e(k)-e(k-1))/T;
+    u(k)  = up(k)+ud(k)+ui(k);
+<span class="keyword">end</span>;
+
+figure; plot((0:length(y)-1)*T, y);
+figure; plot((0:length(u)-1)*T, u);
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+clear all;
+close all;
+T = 0.05;
+T_obj = 0.001;
+Wzm=1.0; 
+T1=0.5; 
+T2=0.2;
+[ld,md]=c2dm(Wzm,[T1*T2 T1+T2 1],T,'zoh');
+b(1)=ld(2);
+b(2)=ld(3);
+a(1)=md(2);
+a(2)=md(3);
+
+[ld_obj,md_obj]=c2dm(Wzm,[T1*T2 T1+T2 1],T_obj,'zoh');
+b_obj(1)=ld_obj(2);
+b_obj(2)=ld_obj(3);
+a_obj(1)=md_obj(2);
+a_obj(2)=md_obj(3);
+fprintf('a[0][0]    = %+.20f;\n',a_obj(1));
+fprintf('a[0][1]    = %+.20f;\n',a_obj(2));
+fprintf('b[0][0][0] = %+.20f;\n',b_obj(1));
+fprintf('b[0][0][1] = %+.20f;\n',b_obj(2));
+na=length(a); nb=length(b); 
+
+kp=5; kk=1000;
+
+u(1:kk)=0;
+y(1:kk)=0;
+e(1:kk)=0;
+z(1:kk)=0; % yzad
+up(1:kk)=0;
+ud(1:kk)=0;
+ui(1:kk)=0;
+
+z(kp:kk) = 50;
+
+kr = 3;
+ur(1:kr)=0;
+yr(1:kr)=0;
+er(1:kr)=0;
+
+ko = 150;
+uo(1:ko)=0;
+yo(1:ko)=0;
+eo(1:ko)=0;
+
+while (ko*T_obj<=10);
+    yo(ko)=0;
+    for i=1:nb
+        yo(ko)=yo(ko)+b_obj(i)*uo(ko-i);
+    end;
+    for i=1:na
+        yo(ko)=yo(ko)-a_obj(i)*yo(ko-i);
+    end;
+    if((ko-1)*T_obj == 1.0)
+        yo(ko) = yo(ko)+100*T_obj;
+    end
+    
+    uo(ko) = 0;
+    ko = ko+1;
+end;
+
+while (kr*T<=10);
+    yr(kr)=0;
+    for i=1:nb
+        yr(kr)=yr(kr)+b(i)*ur(kr-i);
+    end;
+    for i=1:na
+        yr(kr)=yr(kr)-a(i)*yr(kr-i);
+    end;
+    if((kr-1)*T == 1.0)
+        yr(kr) = yr(kr)+100*T;
+    end
+    
+    ur(kr) = 0;
+    kr = kr+1;
+end;
+figure;
+plot((1:length(yo))*T_obj,yo,'r'); hold on;
+plot((1:length(yr))*T,yr,'b')
+
+figure;
+stairs((1:length(uo))*T_obj,uo,'r'); hold on;
+stairs((1:length(ur))*T,ur,'b')
+
+return 
+
+%% parametry do wprowadzenia w oscylacje
+Ku = 27.0; % wzmocnienie krytyczne
+Tu = 0.387; % okres oscylacji biorac pod uwage czas probkowania T
+
+%% parametry PID wyznaczone na podstawie Z-N z polskiej wikipedii
+typ_reg = 'PID';
+if strcmp(typ_reg, 'P')
+    K = 0.5*Ku;
+    Ti = Inf;
+    Td = 0;
+elseif strcmp(typ_reg, 'PI')
+%     K = 0.45*Ku;
+%     Ti = Tu/1.2;
+    K = Ku/3.2;
+    Ti = 2.2*Tu;
+    Td = 0;
+elseif strcmp(typ_reg, 'PID')
+    K = 0.6*Ku;
+    Ti = 0.5*Tu;
+    Td = 0.125*Tu;
+%    K = Ku/2.2;
+%    Ti = 2.2*Tu;
+%    Td = Tu/6.3;
+else
+    K = 27.0; % na symulacji wychodzi 29.8
+    Ti = Inf;
+    Td = 0;
+end
+
+for k=kp:kk;
+    %symulacja obiektu
+    y(k)=0;
+    for i=1:nb
+        y(k)=y(k)+b(i)*u(k-i);
+    end;
+    for i=1:na
+        y(k)=y(k)-a(i)*y(k-i);
+    end;
+    
+    e(k)=z(k)-y(k);
+    
+    up(k) = K*e(k);
+    ui(k) = ui(k-1)+K/Ti*T*(e(k-1)+e(k))/2;
+    ud(k) = K*Td*(e(k)-e(k-1))/T;
+    u(k)  = up(k)+ud(k)+ui(k);
+end;
+
+figure; plot((0:length(y)-1)*T, y);
+figure; plot((0:length(u)-1)*T, u);
+##### SOURCE END #####
+--></body></html>

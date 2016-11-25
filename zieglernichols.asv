@@ -1,7 +1,7 @@
 clear all;
 close all;
 T = 0.05;
-T_obj = 0.005;
+T_obj = 0.001;
 Wzm=1.0; 
 T1=0.5; 
 T2=0.2;
@@ -10,9 +10,7 @@ b(1)=ld(2);
 b(2)=ld(3);
 a(1)=md(2);
 a(2)=md(3);
-print_float_matrix('float a[NA]',a);
-print_float_matrix('float b[NB]',b);
-        
+
 [ld_obj,md_obj]=c2dm(Wzm,[T1*T2 T1+T2 1],T_obj,'zoh');
 b_obj(1)=ld_obj(2);
 b_obj(2)=ld_obj(3);
@@ -36,15 +34,15 @@ ui(1:kk)=0;
 
 z(kp:kk) = 50;
 
-kr = 3;
-ur(1:kr)=0;
-yr(1:kr)=0;
-er(1:kr)=0;
+kr = 4;
+ur(1:k)=0;
+yr(1:k)=0;
+er(1:k)=0;
 
-ko = 150;
-uo(1:ko)=0;
-yo(1:ko)=0;
-eo(1:ko)=0;
+ko = 4;
+uo(1:k)=0;
+yo(1:k)=0;
+eo(1:k)=0;
 
 while (ko*T_obj<=10);
     yo(ko)=0;
@@ -54,11 +52,7 @@ while (ko*T_obj<=10);
     for i=1:na
         yo(ko)=yo(ko)-a_obj(i)*yo(ko-i);
     end;
-%     if((ko-1)*T_obj == 1.0)
-%         yo(ko) = yo(ko)+1000*T_obj;
-%     end
-    
-    uo(ko) = 1000;
+    uo(ko) = 10;
     ko = ko+1;
 end;
 
@@ -70,33 +64,27 @@ while (kr*T<=10);
     for i=1:na
         yr(kr)=yr(kr)-a(i)*yr(kr-i);
     end;
-%     if((kr-1)*T == 1.0)
-%         yr(kr) = yr(kr)+1000*T;
-%     end
-    
-    ur(kr) = 1000;
+    ur(kr) = 10;
     kr = kr+1;
 end;
-figure;
-plot((1:length(yo))*T_obj,yo,'r'); hold on;
-plot((1:length(yr))*T,yr,'b')
+plot((0:length(yo)-1)*T_obj,yx,'r'); hold on;
+plot((0:length(yr)-1)*T,y,'b')
 
-figure;
-stairs((1:length(uo))*T_obj,uo,'r'); hold on;
-stairs((1:length(ur))*T,ur,'b')
-
+return 
 
 %% parametry do wprowadzenia w oscylacje
 Ku = 27.0; % wzmocnienie krytyczne
 Tu = 0.387; % okres oscylacji biorac pod uwage czas probkowania T
 
 %% parametry PID wyznaczone na podstawie Z-N z polskiej wikipedii
-typ_reg = '';
+typ_reg = 'PID';
 if strcmp(typ_reg, 'P')
     K = 0.5*Ku;
     Ti = Inf;
     Td = 0;
 elseif strcmp(typ_reg, 'PI')
+%     K = 0.45*Ku;
+%     Ti = Tu/1.2;
     K = Ku/3.2;
     Ti = 2.2*Tu;
     Td = 0;
@@ -104,6 +92,9 @@ elseif strcmp(typ_reg, 'PID')
     K = 0.6*Ku;
     Ti = 0.5*Tu;
     Td = 0.125*Tu;
+%    K = Ku/2.2;
+%    Ti = 2.2*Tu;
+%    Td = Tu/6.3;
 else
     K = 27.0; % na symulacji wychodzi 29.8
     Ti = Inf;
