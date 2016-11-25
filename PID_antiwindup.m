@@ -8,13 +8,29 @@ Ti = 20;
 Td = 5;
 [u0,y0,z0,~]=PID_tests(T,K,Ti,Td,Inf);
 
+t = (1:length(u0));
+epsilon = 0.1;
+figure; 
+hold on;
+stairs(t,z0(t),'k:');
+stairs(t,z0(t)+epsilon,'r--');
+stairs(t,y0(t),'Color',blue);
+stairs(t,z0(t)-epsilon,'g--');
+xlabel('k');
+ylabel('y_{zad}, y');
+legend('zadana',...
+       'zadana+epsilon',...
+       'sygnal wyjsciowy',...       'spodziewane u(k) (z anti-windup)',...
+       'zadana-epsilon'...
+);
+return
+
 dK = 0.5;
 [u0,y0,z0,~]=PID_tests(T,K,Inf,0,Inf);
 [u1,y1,~,~]=PID_tests(T,K-dK,Inf,0,Inf);
 [u2,y2,~,~]=PID_tests(T,K+dK,Inf,0,Inf);
 
 figure;
-t = (1:length(u0));
 hold on;
 stairs(t,u2(t),'Color', blue);
 stairs(t,u0(t),'Color', red);

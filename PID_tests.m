@@ -1,7 +1,7 @@
 function [u,y,z,awup]=PID_tests(T,K,Ti,Td,Tv)
-[a,b,umin,umax,~,~]= obiekt4();
+[a,b,umin,umax,~,~]= obiekt3();
 na=length(a); nb=length(b); 
-kp=max(na,nb)+1; kp=5; kk=200;
+kp=max(na,nb)+1; kp=5; kk=60;
 u(1:kp-1)=0; u(kp:kk)=0; 
 uw(1:kp-1)=0; uw(kp:kk)=0; 
 y(1:kp-1)=0; y(kp:kk)=0; 
@@ -13,7 +13,7 @@ ui(1:kk)=0;
 u1(1:kk)=0;
 u2(1:kk)=0;
 awup(1:kk)=0;
-z(10:kk) = 1000;
+z(10:kk) = 10;
 test(1:kk)=0;
 
 for k=kp:kk;

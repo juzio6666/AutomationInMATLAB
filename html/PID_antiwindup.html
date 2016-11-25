@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>PID_antiwindup</title><meta name="generator" content="MATLAB 9.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-11-24"><meta name="DC.source" content="PID_antiwindup.m"><style type="text/css">
+      --><title>PID_antiwindup</title><meta name="generator" content="MATLAB 9.0"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-11-25"><meta name="DC.source" content="PID_antiwindup.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -76,36 +76,122 @@ Ti = 20;
 Td = 5;
 [u0,y0,z0,~]=PID_tests(T,K,Ti,Td,Inf);
 
+t = (1:length(u0));
+epsilon = 0.1;
+figure;
+hold <span class="string">on</span>;
+stairs(t,z0(t),<span class="string">'k:'</span>);
+stairs(t,z0(t)+epsilon,<span class="string">'r--'</span>);
+stairs(t,y0(t),<span class="string">'Color'</span>,blue);
+stairs(t,z0(t)-epsilon,<span class="string">'g--'</span>);
+xlabel(<span class="string">'k'</span>);
+ylabel(<span class="string">'y_{zad}, y'</span>);
+legend(<span class="string">'zadana'</span>,<span class="keyword">...</span>
+       <span class="string">'zadana+epsilon'</span>,<span class="keyword">...</span>
+       <span class="string">'zadana-epsilon'</span>,<span class="keyword">...</span>
+       sprintf(<span class="string">'K=%3.1f'</span>,K)<span class="keyword">...</span><span class="comment">       'spodziewane u(k) (z anti-windup)',...</span>
+);
+<span class="keyword">return</span>
+
 dK = 0.5;
 [u0,y0,z0,~]=PID_tests(T,K,Inf,0,Inf);
 [u1,y1,~,~]=PID_tests(T,K-dK,Inf,0,Inf);
 [u2,y2,~,~]=PID_tests(T,K+dK,Inf,0,Inf);
 
 figure;
-t = (1:length(u0));
 hold <span class="string">on</span>;
-stairs(t,u1(t),<span class="string">'Color'</span>, green);
 stairs(t,u2(t),<span class="string">'Color'</span>, blue);
 stairs(t,u0(t),<span class="string">'Color'</span>, red);
+stairs(t,u1(t),<span class="string">'Color'</span>, green);
 xlabel(<span class="string">'k'</span>);
 ylabel(<span class="string">'u'</span>);
-<span class="comment">%legend('ograniczenie umax=1.0',...</span>
-<span class="comment">%       'spodziewane u(k) (bez anti-windup)',...       'spodziewane u(k) (z anti-windup)',...</span>
-<span class="comment">%       'faktyczne u(k) (bez anti-windup)'...       'faktyczne u(k) (z anti-windup)'</span>
-<span class="comment">%);</span>
+legend(sprintf(<span class="string">'K=%3.1f'</span>,K-dK),<span class="keyword">...</span>
+       sprintf(<span class="string">'K=%3.1f'</span>,K),<span class="keyword">...</span><span class="comment">       'spodziewane u(k) (z anti-windup)',...</span>
+       sprintf(<span class="string">'K=%3.1f'</span>,K+dK)'<span class="keyword">...</span><span class="comment">       'faktyczne u(k) (z anti-windup)'</span>
+);
 
 figure;
 hold <span class="string">on</span>;
 stairs(t,z0(t),<span class="string">'k:'</span>);
-stairs(t,y0(t),<span class="string">'b'</span>);
-stairs(t,y1(t),<span class="string">'r'</span>);
-stairs(t,y2(t),<span class="string">'k'</span>);
+stairs(t,y2(t),<span class="string">'Color'</span>,blue);
+stairs(t,y0(t),<span class="string">'Color'</span>,red);
+stairs(t,y1(t),<span class="string">'Color'</span>,green);
 xlabel(<span class="string">'k'</span>);
 ylabel(<span class="string">'y_{zad}, y'</span>);
-<span class="comment">%legend('zadana',...</span>
-<span class="comment">%       'y(k) (bez anti-windup)'...       'y(k) (z anti-windup)'</span>
-<span class="comment">%);</span>
-</pre><img vspace="5" hspace="5" src="PID_antiwindup_01.png" style="width:560px;height:420px;" alt=""> <img vspace="5" hspace="5" src="PID_antiwindup_02.png" style="width:560px;height:420px;" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016a</a><br></p></div><!--
+legend(<span class="string">'zadana'</span>,<span class="keyword">...</span>
+       sprintf(<span class="string">'K=%3.1f'</span>,K-dK),<span class="keyword">...</span>
+       sprintf(<span class="string">'K=%3.1f'</span>,K),<span class="keyword">...</span><span class="comment">       'spodziewane u(k) (z anti-windup)',...</span>
+       sprintf(<span class="string">'K=%3.1f'</span>,K+dK)'<span class="keyword">...</span><span class="comment">       'faktyczne u(k) (z anti-windup)'</span>
+);
+
+
+[u0,y0,z0,~]=PID_tests(T,K,Ti,0,Inf);
+[u1,y1,~,~]=PID_tests(T,K,Ti*0.75,0,Inf);
+[u2,y2,~,~]=PID_tests(T,K,Ti*2,0,Inf);
+
+figure;
+t = (1:length(u0));
+hold <span class="string">on</span>;
+stairs(t,u2(t),<span class="string">'Color'</span>, blue);
+stairs(t,u0(t),<span class="string">'Color'</span>, red);
+stairs(t,u1(t),<span class="string">'Color'</span>, green);
+xlabel(<span class="string">'k'</span>);
+ylabel(<span class="string">'u'</span>);
+legend(sprintf(<span class="string">'Ti=%3.1f'</span>,Ti*2),<span class="keyword">...</span>
+       sprintf(<span class="string">'Ti=%3.1f'</span>,Ti),<span class="keyword">...</span><span class="comment">       'spodziewane u(k) (z anti-windup)',...</span>
+       sprintf(<span class="string">'Ti=%3.1f'</span>,Ti*0.75)'<span class="keyword">...</span><span class="comment">       'faktyczne u(k) (z anti-windup)'</span>
+);
+
+figure;
+hold <span class="string">on</span>;
+stairs(t,z0(t),<span class="string">'k:'</span>);
+stairs(t,y2(t),<span class="string">'Color'</span>,blue);
+stairs(t,y0(t),<span class="string">'Color'</span>,red);
+stairs(t,y1(t),<span class="string">'Color'</span>,green);
+xlabel(<span class="string">'k'</span>);
+ylabel(<span class="string">'y_{zad}, y'</span>);
+legend(<span class="string">'zadana'</span>,<span class="keyword">...</span>
+       sprintf(<span class="string">'Ti=%3.1f'</span>,Ti*2),<span class="keyword">...</span>
+       sprintf(<span class="string">'Ti=%3.1f'</span>,Ti),<span class="keyword">...</span><span class="comment">       'spodziewane u(k) (z anti-windup)',...</span>
+       sprintf(<span class="string">'Ti=%3.1f'</span>,Ti*0.75)'<span class="keyword">...</span><span class="comment">       'faktyczne u(k) (z anti-windup)'</span>
+);
+
+
+
+
+close <span class="string">all</span>;
+
+[u0,y0,z0,~]=PID_tests(T,K,Inf,Td,Inf);
+[u1,y1,~,~]=PID_tests(T,K,Inf,Td-4,Inf);
+[u2,y2,~,~]=PID_tests(T,K,Inf,Td+5,Inf);
+
+figure;
+t = (1:length(u0));
+hold <span class="string">on</span>;
+stairs(t,u2(t),<span class="string">'Color'</span>, blue);
+stairs(t,u0(t),<span class="string">'Color'</span>, red);
+stairs(t,u1(t),<span class="string">'Color'</span>, green);
+xlabel(<span class="string">'k'</span>);
+ylabel(<span class="string">'u'</span>);
+legend(sprintf(<span class="string">'Td=%3.1f'</span>,Td-4),<span class="keyword">...</span>
+       sprintf(<span class="string">'Td=%3.1f'</span>,Td),<span class="keyword">...</span><span class="comment">       'spodziewane u(k) (z anti-windup)',...</span>
+       sprintf(<span class="string">'Td=%3.1f'</span>,Td+5)'<span class="keyword">...</span><span class="comment">       'faktyczne u(k) (z anti-windup)'</span>
+);
+
+figure;
+hold <span class="string">on</span>;
+stairs(t,z0(t),<span class="string">'k:'</span>);
+stairs(t,y2(t),<span class="string">'Color'</span>,blue);
+stairs(t,y0(t),<span class="string">'Color'</span>,red);
+stairs(t,y1(t),<span class="string">'Color'</span>,green);
+xlabel(<span class="string">'k'</span>);
+ylabel(<span class="string">'y_{zad}, y'</span>);
+legend(<span class="string">'zadana'</span>,<span class="keyword">...</span>
+       sprintf(<span class="string">'Td=%3.1f'</span>,Td-4),<span class="keyword">...</span>
+       sprintf(<span class="string">'Td=%3.1f'</span>,Td),<span class="keyword">...</span><span class="comment">       'spodziewane u(k) (z anti-windup)',...</span>
+       sprintf(<span class="string">'Td=%3.1f'</span>,Td+5)'<span class="keyword">...</span><span class="comment">       'faktyczne u(k) (z anti-windup)'</span>
+);
+</pre><img vspace="5" hspace="5" src="PID_antiwindup_01.png" style="width:560px;height:420px;" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 clear all;
 red   = [0.75, 0.00, 0.00];
@@ -117,34 +203,120 @@ Ti = 20;
 Td = 5;
 [u0,y0,z0,~]=PID_tests(T,K,Ti,Td,Inf);
 
+t = (1:length(u0));
+epsilon = 0.1;
+figure; 
+hold on;
+stairs(t,z0(t),'k:');
+stairs(t,z0(t)+epsilon,'rREPLACE_WITH_DASH_DASH');
+stairs(t,y0(t),'Color',blue);
+stairs(t,z0(t)-epsilon,'gREPLACE_WITH_DASH_DASH');
+xlabel('k');
+ylabel('y_{zad}, y');
+legend('zadana',...
+       'zadana+epsilon',...
+       'zadana-epsilon',...
+       sprintf('K=%3.1f',K)...       'spodziewane u(k) (z anti-windup)',...
+);
+return
+
 dK = 0.5;
 [u0,y0,z0,~]=PID_tests(T,K,Inf,0,Inf);
 [u1,y1,~,~]=PID_tests(T,K-dK,Inf,0,Inf);
 [u2,y2,~,~]=PID_tests(T,K+dK,Inf,0,Inf);
 
 figure;
-t = (1:length(u0));
 hold on;
-stairs(t,u1(t),'Color', green);
 stairs(t,u2(t),'Color', blue);
 stairs(t,u0(t),'Color', red);
+stairs(t,u1(t),'Color', green);
 xlabel('k');
 ylabel('u');
-%legend('ograniczenie umax=1.0',...
-%       'spodziewane u(k) (bez anti-windup)',...       'spodziewane u(k) (z anti-windup)',...
-%       'faktyczne u(k) (bez anti-windup)'...       'faktyczne u(k) (z anti-windup)'
-%);
+legend(sprintf('K=%3.1f',K-dK),...
+       sprintf('K=%3.1f',K),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('K=%3.1f',K+dK)'...       'faktyczne u(k) (z anti-windup)'
+);
    
 figure; 
 hold on;
 stairs(t,z0(t),'k:');
-stairs(t,y0(t),'b');
-stairs(t,y1(t),'r');
-stairs(t,y2(t),'k');
+stairs(t,y2(t),'Color',blue);
+stairs(t,y0(t),'Color',red);
+stairs(t,y1(t),'Color',green);
 xlabel('k');
 ylabel('y_{zad}, y');
-%legend('zadana',...
-%       'y(k) (bez anti-windup)'...       'y(k) (z anti-windup)'
-%);
+legend('zadana',...
+       sprintf('K=%3.1f',K-dK),...
+       sprintf('K=%3.1f',K),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('K=%3.1f',K+dK)'...       'faktyczne u(k) (z anti-windup)'
+);
+
+
+[u0,y0,z0,~]=PID_tests(T,K,Ti,0,Inf);
+[u1,y1,~,~]=PID_tests(T,K,Ti*0.75,0,Inf);
+[u2,y2,~,~]=PID_tests(T,K,Ti*2,0,Inf);
+
+figure;
+t = (1:length(u0));
+hold on;
+stairs(t,u2(t),'Color', blue);
+stairs(t,u0(t),'Color', red);
+stairs(t,u1(t),'Color', green);
+xlabel('k');
+ylabel('u');
+legend(sprintf('Ti=%3.1f',Ti*2),...
+       sprintf('Ti=%3.1f',Ti),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Ti=%3.1f',Ti*0.75)'...       'faktyczne u(k) (z anti-windup)'
+);
+   
+figure; 
+hold on;
+stairs(t,z0(t),'k:');
+stairs(t,y2(t),'Color',blue);
+stairs(t,y0(t),'Color',red);
+stairs(t,y1(t),'Color',green);
+xlabel('k');
+ylabel('y_{zad}, y');
+legend('zadana',...
+       sprintf('Ti=%3.1f',Ti*2),...
+       sprintf('Ti=%3.1f',Ti),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Ti=%3.1f',Ti*0.75)'...       'faktyczne u(k) (z anti-windup)'
+);
+
+
+
+
+close all;
+
+[u0,y0,z0,~]=PID_tests(T,K,Inf,Td,Inf);
+[u1,y1,~,~]=PID_tests(T,K,Inf,Td-4,Inf);
+[u2,y2,~,~]=PID_tests(T,K,Inf,Td+5,Inf);
+
+figure;
+t = (1:length(u0));
+hold on;
+stairs(t,u2(t),'Color', blue);
+stairs(t,u0(t),'Color', red);
+stairs(t,u1(t),'Color', green);
+xlabel('k');
+ylabel('u');
+legend(sprintf('Td=%3.1f',Td-4),...
+       sprintf('Td=%3.1f',Td),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Td=%3.1f',Td+5)'...       'faktyczne u(k) (z anti-windup)'
+);
+   
+figure; 
+hold on;
+stairs(t,z0(t),'k:');
+stairs(t,y2(t),'Color',blue);
+stairs(t,y0(t),'Color',red);
+stairs(t,y1(t),'Color',green);
+xlabel('k');
+ylabel('y_{zad}, y');
+legend('zadana',...
+       sprintf('Td=%3.1f',Td-4),...
+       sprintf('Td=%3.1f',Td),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Td=%3.1f',Td+5)'...       'faktyczne u(k) (z anti-windup)'
+);
 ##### SOURCE END #####
 --></body></html>

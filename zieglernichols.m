@@ -24,26 +24,32 @@ ui(1:kk)=0;
 z(kp:kk) = 250;
 
 %% parametry do wprowadzenia w oscylacje
-%K = 13.1;
-%Ti = Inf;
-%Td = 0;
 Ku = 13.1; % wzmocnienie krytyczne
-Tu = 21.5; % okres oscylacji biorac pod uwage czas probkowania 0.01s
+Tu = 0.215; % okres oscylacji biorac pod uwage czas probkowania 0.01s
 
 %% parametry PID wyznaczone na podstawie Z-N z polskiej wikipedii
-typ_reg = 'P';
+typ_reg = 'PID';
 if strcmp(typ_reg, 'P')
     K = 0.5*Ku;
     Ti = Inf;
     Td = 0;
 elseif strcmp(typ_reg, 'PI')
-    K = 0.45*Ku;
-    Ti = K/(1.2*Ku/Tu);
+%     K = 0.45*Ku;
+%     Ti = Tu/1.2;
+    K = Ku/3.2;
+    Ti = 2.2*Tu;
     Td = 0;
 elseif strcmp(typ_reg, 'PID')
-    K = 0.6*Ku;
-    Ti = K/(2*Ku/Tu);
-    Td = (Ku*Tu/8)/K;
+%     K = 0.6*Ku;
+%     Ti = 0.5*Tu;
+%     Td = 0.125*Tu;
+    K = Ku/2.2;
+    Ti = 2.2*Tu;
+    Td = Tu/6.3;
+else
+    K = 13.1;
+    Ti = Inf;
+    Td = 0;
 end
 
 for k=kp:kk;
