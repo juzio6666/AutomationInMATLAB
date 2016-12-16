@@ -1,5 +1,6 @@
-function [y,u,yzad]=GPC1x1()
-    Hp=10; Hs=5; lambda=15;
+function [y,u,yzad]=GPC1x1_2()
+    global Hp Hs lambda
+    Hp=15; Hs=10; lambda=15;
     typobiektu=2;%1 lub 2 inercje
 
     if typobiektu==1;
@@ -23,16 +24,17 @@ function [y,u,yzad]=GPC1x1()
     na=length(a); nb=length(b); kp=max(na,nb)+1;
 
     yzad(1:kp-1)=0; 
-    yzad(  kp: 200)=-1000;
-    yzad( 201: 400)=  500;
-    yzad( 401: 600)=  400;
-    yzad( 601: 800)= 000;
-    yzad( 801:1000)= 1000;
-    yzad(1001:1200)= 1000;
-    yzad(1201:1400)= 1000;
-    yzad(1401:1600)= 1000;
-    yzad(1601:1800)= 1000;
-    yzad(1801:2000)= 1000;
+    yzads = [-8, 10, -1, 7, -10, -4, 0, 1, 9, -3]; ... randi([-10,10],1,10);
+    yzad(  kp: 200)= 100*yzads( 1);
+    yzad( 201: 400)= 100*yzads( 2);
+    yzad( 401: 600)= 100*yzads( 3);
+    yzad( 601: 800)= 100*yzads( 4);
+    yzad( 801:1000)= 100*yzads( 5);
+    yzad(1001:1200)= 100*yzads( 6);
+    yzad(1201:1400)= 100*yzads( 7);
+    yzad(1401:1600)= 100*yzads( 8);
+    yzad(1601:1800)= 100*yzads( 9);
+    yzad(1801:2000)= 100*yzads(10);
     kk=length(yzad);
 
     %odpowiedü skokowa
