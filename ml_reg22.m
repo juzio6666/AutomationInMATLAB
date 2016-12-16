@@ -1,6 +1,6 @@
 clearvars;
 global Hp Hs
-D=50; Hp=10; Hs=5; %wsplambda=[0.075 0.075]; wspmi=[1 1];
+D=50; Hp=15; Hs=10; %wsplambda=[0.075 0.075]; wspmi=[1 1];
 wsplambda=[0.075 0.15]; wspmi=[1 2];
 ilwe=2; ilwy=2;
 
