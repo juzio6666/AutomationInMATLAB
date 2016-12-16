@@ -6,9 +6,48 @@ T  = 2;
 K  = 1.2;
 Ti = 20;
 Td = 5;
-[u0,y0,z0,~]=PID_tests(T,K,Ti,Td,Inf);
+[u0,y0,z0,u00]=PID_tests(T,K,Ti,Td,20);
+[u1,y1,z1,u11]=PID_tests(T,K,Ti,Td,Inf);
+[u2,y2,z2,u22]=PID_tests(T,K,Ti,Td,10);
 
 t = (1:length(u0));
+
+figure;
+hold on;
+stairs(t,ones(size(t))*2047,'k:');
+stairs(t,u22(t),'Color', blue,'LineStyle','--');
+stairs(t,u2(t),'Color', blue);
+stairs(t,u00(t),'Color', red,'LineStyle','--');
+stairs(t,u0(t),'Color', red);
+stairs(t,u11(t),'Color', green,'LineStyle','--');
+stairs(t,u1(t),'Color', green);
+xlabel('k');
+ylabel('u');
+legend(sprintf('ograniczenie u=2047'),...
+       sprintf('u dla Taw=%3.0f',20),...
+       sprintf('uw dla Taw=%3.0f',20),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('u dla Taw=%3.0f',10),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('uw dla Taw=%3.0f',10),...
+       sprintf('u dla Taw=Inf')',...       'faktyczne u(k) (z anti-windup)'
+       sprintf('uw dla Taw=Inf')'...       'faktyczne u(k) (z anti-windup)'
+);
+ylim([0,3100]);
+
+figure; 
+hold on;
+stairs(t,z0(t),'k:');
+stairs(t,y2(t),'Color',blue);
+stairs(t,y0(t),'Color',red);
+stairs(t,y1(t),'Color',green);
+xlabel('k');
+ylabel('y_{zad}, y');
+legend('zadana',...
+       sprintf('Taw=%3.0f',20),...
+       sprintf('Taw=%3.0f',10),...       'spodziewane u(k) (z anti-windup)',...
+       sprintf('Taw=Inf')'...       'faktyczne u(k) (z anti-windup)'
+);
+
+return;
 epsilon = 0.1;
 figure; 
 hold on;
@@ -23,7 +62,6 @@ legend('zadana',...
        'sygnal wyjsciowy',...       'spodziewane u(k) (z anti-windup)',...
        'zadana-epsilon'...
 );
-return
 
 dK = 0.5;
 [u0,y0,z0,~]=PID_tests(T,K,Inf,0,Inf);
@@ -87,8 +125,6 @@ legend('zadana',...
        sprintf('Ti=%3.1f',Ti),...       'spodziewane u(k) (z anti-windup)',...
        sprintf('Ti=%3.1f',Ti*0.75)'...       'faktyczne u(k) (z anti-windup)'
 );
-
-
 
 
 close all;
