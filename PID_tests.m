@@ -1,7 +1,7 @@
 function [u,y,z,test]=PID_tests(T,K,Ti,Td,Tv)
 [a,b,umin,umax,~,~]= obiekt3();
 na=length(a); nb=length(b); 
-kp=max(na,nb)+1; kp=5; kk=60;
+kp=max(na,nb)+1; kp=5; kk=50;
 u(1:kp-1)=0; u(kp:kk)=0; 
 uw(1:kp-1)=0; uw(kp:kk)=0; 
 y(1:kp-1)=0; y(kp:kk)=0; 
