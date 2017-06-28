@@ -2,58 +2,19 @@ function DMCNxNu(S,N,Nu)
     object = @object2;
     
     kmax = 1000;
-    kstart = max(na,nb)+1;
+    kstart = 10;
     ny = 2;
     nu = 2;
-    u(1:nu,1:kstart-1)=0; y(1:ny,1:kstart-1)=0;
 
-    N = 3;
-    Nu = 2;
-    D=100; 
-    wsplambda=[0.075 0.0075]; 
-    wspsi=[1 1];
-    
-    for k=1:D
-        i1=min(k,na); i2=min(k-1,nb);
-        for m=1:ny
-            for n=1:nu
-                s(m,n,k)=0.0;
-                for i=1:i1;
-                    s(m,n,k)=s(m,n,k)+b(m,n,i);
-                end;
-                for i=1:i2;
-                    s(m,n,k)=s(m,n,k)-a(m,i)*s(m,n,k-i);
-                end;
-            end;
-        end;
-    end;
-    for m=1:ilwy;
-        for n=1:ilwe
-            s(m,n,D+1:D+Hp)=s(m,n,D);
-        end;
-    end;
-
-    
-    for m=1:ny;
-        y(m,k)=0.0;
-        for n=1:nu;
-            for i=1:nb;
-                y(m,k)=y(m,k)+b(m,n,i)*u(n,k-i);
-            end;
-        end;
-        for i=1:na;
-            y(m,k)=y(m,k)-a(m,i)*y(m,k-i);
-        end;
-    end;
+    D  = size(S,3); 
     
     yzad = [10, 5]'*ones(1,kmax+N+1);
-    
-    
+
     nY = N*ny;
     ndU = Nu*nu;
-    y = zeros(ny,0);
-    du = zeros(nu,0);
-    u = zeros(nu,0);
+    y = zeros(ny,kmax);
+    du = zeros(nu,kmax);
+    u = zeros(nu,kmax);
         
     M = zeros(nY, ndU);
     for i = 1:N
@@ -65,11 +26,15 @@ function DMCNxNu(S,N,Nu)
     Mp = zeros(ny*N, nu*(D-1));
     for i = 1:N
         for j = 1:(D-1)
-            Mp(((i-1)*ny+1):(i*ny),((j-1)*nu+1):(j*nu)) = S(i+j,:,:)-S(j,:,:);
+            tmp = S(D,:,:);
+            if(i+j<D)
+                tmp = S(i+j,:,:);
+            end
+            Mp(((i-1)*ny+1):(i*ny),((j-1)*nu+1):(j*nu)) = tmp-S(j,:,:);
         end
     end
     
-    lambda = 12;
+    lambda = 100;
     Psi_ = diag(ones(ny*N,1));
     Lambda_ = diag(lambda*ones(nu*Nu,1));
     
@@ -78,18 +43,20 @@ function DMCNxNu(S,N,Nu)
     Y   = zeros(ny*N,1);
     Yzad= zeros(ny*N,1);
     
-    for k = 1:kmax
+    
+    
+    for k = kstart:kmax
         if(k-1 > 0)
-            y(:,k) = object(u(:,k-1), y(:,k-1));
+            y = object(u(:,:), y(:,:),k);
         else
-            y(:,k) = [1,2];
+            y(:,k) = zeros(1,ny);
         end
         if k < kstart
             du(:,k) = 0;
             if(k-1 > 0)
                 u(:,k) = u(:,k-1)+du(:,k);
             else
-                u(:,k) = [0.1,0.2];
+                u(:,k) = zeros(1,nu);
             end
             continue
         end
@@ -115,7 +82,7 @@ function [y] = object1(u,y)
     y(2) = y(2)*0.8+u(2)*0.2;
 end
 
-function [y] = object2(u,y)
+function [y] = object2(u,y,k)
     ilwe=2; ilwy=2;
     Tp=0.03;%okres próbkowania
     K=1; T=0.7; alfa=exp(-Tp/T); B11=K*(1-alfa); A11=-alfa; %G11=1/0.7s+1
@@ -133,7 +100,7 @@ function [y] = object2(u,y)
     b(1,2,1)=B12; b(1,2,2)=B12*A11;
     b(2,1,1)=B21; b(2,1,2)=B21*A22;
     b(2,2,1)=B22; b(2,2,2)=B22*A21;
-    
+        k
     for m=1:ilwy;
         y(m,k)=0.0;
         for n=1:ilwe;
