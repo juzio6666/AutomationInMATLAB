@@ -1,7 +1,10 @@
 clearvars;
-D=50; Hp=10; Hs=5; %wsplambda=[0.075 0.075]; wspmi=[1 1];
-wsplambda=[0.075 0.15]; wspmi=[1 2];
+global Hp Hs
+D=50; Hp=10; Hs=2; %wsplambda=[0.075 0.075]; wspmi=[1 1];
+wsplambda=[1 1]; wspmi=[1 1];
 ilwe=2; ilwy=2;
+
+clip = [];
 
 na=2; nb=2;
 Tp=0.003;%okres próbkowania
@@ -49,29 +52,29 @@ b(2,1,1)=B21;
 b(2,1,2)=B21*A22;
 b(2,2,1)=B22; b(2,2,2)=B22*A21;
 
-fprintf('#define HP %d\n',Hp);
-fprintf('#define HS %d\n',Hs);
+clip = [clip sprintf('#define HP %d\n',Hp)];
+clip = [clip sprintf('#define HS %d\n',Hs)];
 
-fprintf('#define ilwy %d\n',ilwy);
-fprintf('#define ilwe %d\n',ilwe);
+clip = [clip sprintf('#define ilwy %d\n',ilwy)];
+clip = [clip sprintf('#define ilwe %d\n',ilwe)];
 
-fprintf('#define na %d\n',na);
-fprintf('#define nb %d\n',nb);
+clip = [clip sprintf('#define na %d\n',na)];
+clip = [clip sprintf('#define nb %d\n',nb)];
 
-fprintf('float b[ilwy][ilwe][nb];\n');
-fprintf('float a[ilwy][na];\n');
-fprintf('void Model_Init(void){\n');
+clip = [clip sprintf('float b[ilwy][ilwe][nb];\n')];
+clip = [clip sprintf('float a[ilwy][na];\n')];
+clip = [clip sprintf('void Model_Init(void){\n')];
 for m=1:ilwy;
     for n=1:ilwe;
         for i=1:nb;
-            fprintf('\tb[%d][%d][%d] = %.9f;\n',m-1,n-1,i-1,b(m,n,i));
+            clip = [clip sprintf('\tb[%d][%d][%d] = %.9f;\n',m-1,n-1,i-1,b(m,n,i))];
         end;
     end;
     for i=1:na;
-        fprintf('\ta[%d][%d] = %.9f;\n',m-1,i-1,a(m,i));
+        clip = [clip sprintf('\ta[%d][%d] = %.9f;\n',m-1,i-1,a(m,i))];
     end;
 end;
-fprintf('}\n');
+clip = [clip sprintf('}\n')];
 
 kp=max(na,nb)+1;%pocz¹tek symulacji
 %warunki pocz¹tkowe
@@ -166,20 +169,20 @@ end;
 K=(G'*MI*G+LAMBDA)\G'*MI;
 tmpK = K';
 tmpTxt = 'float K[(HS*ilwe)*(HP*ilwy)] = {';
-fprintf(tmpTxt);
+clip = [clip sprintf(tmpTxt)];
 for x1=1:size(K,1)
     if x1~=1
-        fprintf('%s',ones(size(tmpTxt))*' ');
+        clip = [clip sprintf('%s',ones(size(tmpTxt))*' ')];
     end
     for x2=1:size(K,2)
-        fprintf('%.9f',K(x1,x2));
-        if x2==size(K,2) && x2==size(K,1)
-            fprintf('};');
+        clip = [clip sprintf('%.9f',K(x1,x2))];
+        if x2==size(K,2) && x1==size(K,1)
+            clip = [clip sprintf('};')];
         else 
-            fprintf(',');
+            clip = [clip sprintf(',')];
         end
     end
-    fprintf('\n');
+    clip = [clip sprintf('\n')];
 end
 
 DUP=zeros(ilwe*(D-1),1);
@@ -261,11 +264,13 @@ for k=kp:kk;
     u(1,k)=DU(1)+u(1,k-1);
     u(2,k)=DU(2)+u(2,k-1);
 end;
-txt=sprintf('GPC: Hp=%ld, Hs=%ld',Hp,Hs);
+% txt=sprintf('GPC: Hp=%ld, Hs=%ld',Hp,Hs);
 
-figure;
-subplot(2,1,1); stairs(u(1,1:kk)); grid; xlabel('k'); ylabel('u_1'); title(txt);
-subplot(2,1,2); stairs(u(2,1:kk)); grid; xlabel('k'); ylabel('u_2');
-figure;
-subplot(2,1,1); stairs(yzad(1,1:kk),'r'); hold on; plot(y(1,1:kk),'b'); grid; xlabel('k'); ylabel('y_1^{zad}, y_1'); title(txt);
-subplot(2,1,2); stairs(yzad(2,1:kk),'r'); hold on; plot(y(2,1:kk),'b'); grid; xlabel('k'); ylabel('y_2^{zad}, y_2');
+% figure;
+% subplot(2,1,1); stairs(u(1,1:kk)); grid; xlabel('k'); ylabel('u_1'); title(txt);
+% subplot(2,1,2); stairs(u(2,1:kk)); grid; xlabel('k'); ylabel('u_2');
+% figure;
+% subplot(2,1,1); stairs(yzad(1,1:kk),'r'); hold on; plot(y(1,1:kk),'b'); grid; xlabel('k'); ylabel('y_1^{zad}, y_1'); title(txt);
+% subplot(2,1,2); stairs(yzad(2,1:kk),'r'); hold on; plot(y(2,1:kk),'b'); grid; xlabel('k'); ylabel('y_2^{zad}, y_2');
+fprintf(clip);
+clipboard('copy',clip);
