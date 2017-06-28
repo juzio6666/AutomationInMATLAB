@@ -1,6 +1,6 @@
 function [y,u,yzad]=GPC1x1()
     global Hp Hs lambda
-    Hp=15; Hs=9; lambda=15;
+    Hp=10; Hs=2; lambda=15;
     typobiektu=2;%1 lub 2 inercje
 
     if typobiektu==1;
