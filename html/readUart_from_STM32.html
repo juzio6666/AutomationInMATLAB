@@ -1,0 +1,150 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>readUart_from_STM32</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-06-28"><meta name="DC.source" content="readUart_from_STM32.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput">delete(instrfindall); <span class="comment">% zamkniecie wszystkich polaczen szeregowych</span>
+clearvars;
+
+s = serial(<span class="string">'COM3'</span>); <span class="comment">% COM9 to jest port utworzony przez mikrokontroler</span>
+set(s,<span class="string">'BaudRate'</span>,115200);
+set(s,<span class="string">'StopBits'</span>,1);
+set(s,<span class="string">'Parity'</span>,<span class="string">'none'</span>);
+set(s,<span class="string">'DataBits'</span>,8);
+set(s,<span class="string">'Timeout'</span>,100000);
+set(s,<span class="string">'InputBufferSize'</span>,1000);
+set(s,<span class="string">'Terminator'</span>,13);
+fopen(s); <span class="comment">% otwarcie kanalu komunikacyjnego</span>
+
+Tp = 0.005; <span class="comment">% czas z jakim probkuje regulator</span>
+y = [];    <span class="comment">% wektor wyjsc obiektu</span>
+z = [];    <span class="comment">% wektor wyjsc obiektu</span>
+u = [];    <span class="comment">% wektor wejsc (sterowan) obiektu</span>
+
+<span class="keyword">while</span> length(y)~=2000    <span class="comment">% zbieramy 100 pomiarow</span>
+    txt = fread(s,33);  <span class="comment">% odczytanie z portu szeregowego</span>
+                        <span class="comment">% txt powinien zawiera&#263; "Y=%4d;U=%4d;"</span>
+                        <span class="comment">% czyli np. "Y=1234;U=3232;"</span>
+    disp(char(txt'));disp(<span class="string">'\n'</span>);
+    eval(char(txt'));   <span class="comment">% wykonajmy to co otrzymalismy</span>
+    y=[y;Y];            <span class="comment">% powiekszamy wektor y o element Y</span>
+    z=[z;Z];            <span class="comment">% powiekszamy wektor y o element Y</span>
+    u=[u;U];            <span class="comment">% powiekszamy wektor u o element U</span>
+<span class="keyword">end</span>
+
+close <span class="string">all</span>;
+figure;
+plot(y); hold <span class="string">on</span>;
+stairs(z,<span class="string">'k--'</span>); hold <span class="string">off</span>;
+
+figure;
+stairs(u)
+</pre><pre class="codeoutput error">Error using serial/fopen (line 72)
+Open failed: Cannot connect to the COM3 port. Possible reasons are another
+application is connected to the port or the port does not exist.
+
+Error in readUart_from_STM32 (line 12)
+fopen(s); % otwarcie kanalu komunikacyjnego
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+delete(instrfindall); % zamkniecie wszystkich polaczen szeregowych
+clearvars;
+
+s = serial('COM3'); % COM9 to jest port utworzony przez mikrokontroler
+set(s,'BaudRate',115200);
+set(s,'StopBits',1);
+set(s,'Parity','none');
+set(s,'DataBits',8);
+set(s,'Timeout',100000);
+set(s,'InputBufferSize',1000);
+set(s,'Terminator',13);
+fopen(s); % otwarcie kanalu komunikacyjnego
+
+Tp = 0.005; % czas z jakim probkuje regulator
+y = [];    % wektor wyjsc obiektu
+z = [];    % wektor wyjsc obiektu
+u = [];    % wektor wejsc (sterowan) obiektu
+
+while length(y)~=2000    % zbieramy 100 pomiarow
+    txt = fread(s,33);  % odczytanie z portu szeregowego
+                        % txt powinien zawierać "Y=%4d;U=%4d;"
+                        % czyli np. "Y=1234;U=3232;"
+    disp(char(txt'));disp('\n');
+    eval(char(txt'));   % wykonajmy to co otrzymalismy
+    y=[y;Y];            % powiekszamy wektor y o element Y
+    z=[z;Z];            % powiekszamy wektor y o element Y
+    u=[u;U];            % powiekszamy wektor u o element U
+end
+
+close all;
+figure;
+plot(y); hold on;
+stairs(z,'kREPLACE_WITH_DASH_DASH'); hold off;
+
+figure;
+stairs(u)
+##### SOURCE END #####
+--></body></html>

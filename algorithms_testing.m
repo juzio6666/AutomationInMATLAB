@@ -1,28 +1,36 @@
-clearvars
-close all
+%clearvars
+%close all
 
 %% Algorytm DMC 1x1 (benchmark)
 % Obiekt regulacji
-Gs = tf(1,[.01 1]);
-Gz = c2d(Gs,0.1);
+Gs = tf(1,[.7 1]);
+Gz = c2d(Gs,0.005);
 a = Gz.Denominator{1}(2);
 b = Gz.Numerator{1}(2);
+
+umax =  1;
+umin = -1;
 
 % OdpowiedŸ skokowa
 S = step(Gz);
 S = S(2:end); % usuwanie pierwszego elementu odpowiedzi skokowej -- KONIECZNE!
 
 % Horyzonty predykcji i sterowania
-N = 20; 
-Nu = 20;
+N = 50; 
+Nu = 50;
 
 % Wartoœci trajektorii zadanej
-yzad(1:20) = 0;
-yzad(100:200) = 1;
-yzad(200:400) = -1;
-yzad(400:600) = -.1;
-yzad(600:800) = .1;
-yzad(800:1000) = -.5;
+yzad(1:2000) = 0;
+yzad(   1: end) = -.8;
+%yzad( 200: end) =  .1;
+yzad( 400: end) = -.1;
+%yzad( 600: end) =  .7;
+yzad( 800: end) = -.3;
+%yzad(1000: end) = -.4;
+yzad(1200: end) =  .0;
+%yzad(1400: end) =  .1;
+%yzad(1600: end) =  .9;
+yzad(1800: end) = -.3;
 
 % Pocz¹tkowa i koñcowa chwila symulacji
 kp = 2;
@@ -33,8 +41,8 @@ Lambda = eye(Nu);
 Psi = eye(N);
 
 % Wektory wartoœci sterowania oraz wyjœcia obiektu regulacji
-u = zeros(kk,1);
-y = zeros(kk,1);
+%u = zeros(kk,1);
+%y = zeros(kk,1);
 
 % Horyzont dynamiki (do wyznaczania dUp)
 D = length(S);
@@ -55,6 +63,8 @@ for k = kp:kk
     du = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad); % algorytm DMC 1x1
     
     u(k) = u(k-1)+du;
+    if(u(k)>umax); u(k) = umax; end
+    if(u(k)<umin); u(k) = umin; end
 end
 
 %% Rysownie przebiegów trajektorii wyjœcia, zadanej oraz sterowania

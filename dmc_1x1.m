@@ -1,4 +1,4 @@
-function du = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad)
+function [du, K, Ku, Ke, Mp] = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad)
 %DMC_1X1 Dynamic Matrix Control.
 %   du = DMC_1X1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad) denotes new control value du 
 %   for a process defined by step response S, by solving following problem:
@@ -134,11 +134,15 @@ for row = 1:N
         Mp(row,col) = S(min(row+col,D)) - S(col);
    end
 end
-
-%% Algorithm itself
-Y0 = Y+Mp*dUp;
 K = (M'*Psi*M+Lambda)^(-1)*M';
-dU = K*(Yzad-Y0);
-if(dispall); M,Mp,Y,Y0,K,dU, end
-du = dU(1);
+Ke = sum(K(1,:));
+Ku = K(1,:)*Mp;
+
+%% Algorithm itself (extensive form)
+% Y0 = Y+Mp*dUp;
+% dU = K*(Yzad-Y0);
+% du = dU(1);
+
+%% Algorithm itself (minimalistic form assuming Yzad constant on the prediction horison)
+du = Ke*(Yzad(1)-Y(1)) - Ku*dUp;
 end
