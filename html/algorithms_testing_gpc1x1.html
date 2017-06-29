@@ -1,0 +1,203 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>algorithms_testing_gpc1x1</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-06-29"><meta name="DC.source" content="algorithms_testing_gpc1x1.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Algorytm GPC 1x1 (benchmark)</a></li><li><a href="#3">Symulacja</a></li><li><a href="#4">Rysownie przebieg&oacute;w trajektorii wyj&#347;cia, zadanej oraz sterowania</a></li></ul></div><pre class="codeinput"><span class="comment">%clearvars</span>
+<span class="comment">%close all</span>
+</pre><h2 id="2">Algorytm GPC 1x1 (benchmark)</h2><p>Obiekt regulacji</p><pre class="codeinput">Gs = tf(1,[.7 1]);
+Gz = c2d(Gs,0.005);
+A = Gz.Denominator{1}(2);
+B = Gz.Numerator{1}(2);
+a = Gz.Denominator{1}(2:end);
+b = Gz.Numerator{1}(2:end);
+na= length(a);
+nb= length(b);
+
+<span class="comment">% Ograniczenia</span>
+umax =  1;
+umin = -1;
+
+<span class="comment">% Horyzonty predykcji i sterowania</span>
+N = 50;
+Nu = 50;
+
+<span class="comment">% Warto&#347;ci trajektorii zadanej</span>
+yzad(   1:2000) =  .0;
+yzad( 400: end) = -.1;
+yzad( 800: end) =  .3;
+yzad(1200: end) =  .0;
+yzad(1800: end) = -.3;
+
+<span class="comment">% Pocz&#261;tkowa i ko&#324;cowa chwila symulacji</span>
+kp = max(na,nb)+1;
+kk = length(yzad);
+
+<span class="comment">% Macierze Lambda oraz Psi -- wagi funkcji koszt&oacute;w</span>
+Lambda = eye(Nu);
+Psi = eye(N);
+
+<span class="comment">% Wektory warto&#347;ci sterowania oraz wyj&#347;cia obiektu regulacji</span>
+u = zeros(kk,1);
+y = zeros(kk,1);
+</pre><h2 id="3">Symulacja</h2><pre class="codeinput"><span class="keyword">for</span> k = kp:kk
+    y(k) = -A*y(k-1)+B*u(k-1); <span class="comment">% symulacja obiektu regulacji</span>
+
+    Yzad = ones(N,1)*yzad(k); <span class="comment">% Yzad sta&#322;e na horyzoncie predykcji</span>
+<span class="comment">%     Yzad = yzad(min(k+(1:N),kk)); % Yzad zmienne na horyzoncie predykcji</span>
+
+    U = u((k-nb):(k-1)); <span class="comment">% last nb values (from u(k-nb) to u(k-1))</span>
+    Y = y((k-na):k);     <span class="comment">% last na+1 values (from y(k-na) to y(k))</span>
+    du = gpc_1x1(a,b,N,Nu,Lambda,Psi,U,Y,Yzad); <span class="comment">% algorytm GPC 1x1</span>
+
+    u(k) = u(k-1)+du;
+    <span class="keyword">if</span>(u(k)&gt;umax); u(k) = umax; <span class="keyword">end</span>
+    <span class="keyword">if</span>(u(k)&lt;umin); u(k) = umin; <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput error">Subscript indices must either be real positive integers or logicals.
+
+Error in gpc_1x1&gt;gpc_1x1_loop (line 120)
+    for i=1:nb; ym = ym + b(i)*u(nb+1-i-1); end % u(k-i-1) -k=nb+1-&gt; u(nb+1-i-1)
+
+Error in gpc_1x1 (line 10)
+du = gpc_1x1_loop(a,b,N,Knu,u,y,Yzad);
+
+Error in algorithms_testing_gpc1x1 (line 51)
+    du = gpc_1x1(a,b,N,Nu,Lambda,Psi,U,Y,Yzad); % algorytm GPC 1x1
+</pre><h2 id="4">Rysownie przebieg&oacute;w trajektorii wyj&#347;cia, zadanej oraz sterowania</h2><pre class="codeinput">figure;
+plot(y); hold <span class="string">on</span>;
+stairs(yzad,<span class="string">'k--'</span>); hold <span class="string">off</span>;
+
+figure;
+stairs(u);
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%clearvars
+%close all
+
+%% Algorytm GPC 1x1 (benchmark)
+% Obiekt regulacji
+Gs = tf(1,[.7 1]);
+Gz = c2d(Gs,0.005);
+A = Gz.Denominator{1}(2);
+B = Gz.Numerator{1}(2);
+a = Gz.Denominator{1}(2:end);
+b = Gz.Numerator{1}(2:end);
+na= length(a);
+nb= length(b);
+
+% Ograniczenia
+umax =  1;
+umin = -1;
+
+% Horyzonty predykcji i sterowania
+N = 50; 
+Nu = 50;
+
+% Wartości trajektorii zadanej
+yzad(   1:2000) =  .0;
+yzad( 400: end) = -.1;
+yzad( 800: end) =  .3;
+yzad(1200: end) =  .0;
+yzad(1800: end) = -.3;
+
+% Początkowa i końcowa chwila symulacji
+kp = max(na,nb)+1;
+kk = length(yzad);
+
+% Macierze Lambda oraz Psi REPLACE_WITH_DASH_DASH wagi funkcji kosztów
+Lambda = eye(Nu);
+Psi = eye(N);
+
+% Wektory wartości sterowania oraz wyjścia obiektu regulacji
+u = zeros(kk,1);
+y = zeros(kk,1);
+
+%% Symulacja
+for k = kp:kk
+    y(k) = -A*y(k-1)+B*u(k-1); % symulacja obiektu regulacji
+    
+    Yzad = ones(N,1)*yzad(k); % Yzad stałe na horyzoncie predykcji
+%     Yzad = yzad(min(k+(1:N),kk)); % Yzad zmienne na horyzoncie predykcji
+    
+    U = u((k-nb):(k-1)); % last nb values (from u(k-nb) to u(k-1))
+    Y = y((k-na):k);     % last na+1 values (from y(k-na) to y(k))
+    du = gpc_1x1(a,b,N,Nu,Lambda,Psi,U,Y,Yzad); % algorytm GPC 1x1
+    
+    u(k) = u(k-1)+du;
+    if(u(k)>umax); u(k) = umax; end
+    if(u(k)<umin); u(k) = umin; end
+end
+
+%% Rysownie przebiegów trajektorii wyjścia, zadanej oraz sterowania
+figure;
+plot(y); hold on;
+stairs(yzad,'kREPLACE_WITH_DASH_DASH'); hold off;
+
+figure;
+stairs(u);
+##### SOURCE END #####
+--></body></html>

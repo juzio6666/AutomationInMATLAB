@@ -30,8 +30,8 @@ function [du, K, Ku, Ke, Mp] = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad)
 %      Yzad = [yzad(k+1), yzad(k+2), ... , yzad(k+N)]'
 
 [K, Mp, Ku, Ke] = dmc_1x1_init(S,N,Nu,Lambda,Psi);
-du = dmc_1x1_loop(N,Nu,K,Mp,dUp,Y,Yzad);
-%du = dmc_1x1_loop_min(N,Nu,Ku,Ke,dUp,Y,Yzad);
+du = dmc_1x1_loop(N,length(S),K,Mp,dUp,Y,Yzad);
+%du = dmc_1x1_loop_min(length(S),Ku,Ke,dUp,Y(1),Yzad(1));
 
 end
 
@@ -112,16 +112,7 @@ function [K, Mp, Ku, Ke] = dmc_1x1_init(S,N,Nu,Lambda,Psi)
 end
 
 %% Algorithm itself (extensive form)
-function du = dmc_1x1_loop(N,Nu,K,Mp,dUp,Y,Yzad)
-    % dUp check
-    if(isvector(dUp))
-        if(length(dUp) ~= (D-1)); error('Vector dUp should have a size of D-1=%d instead of %d',D-1,length(dUp));
-        elseif(size(dUp,1)~=(D-1)); dUp = dUp';
-        end
-    else
-        error('dUp is not a vector');
-    end
-
+function du = dmc_1x1_loop(N,D,K,Mp,dUp,Y,Yzad)
     % Y check
     if(isscalar(Y)); Y = ones(N,1)*Y;
     elseif(isvector(Y))
@@ -143,6 +134,7 @@ function du = dmc_1x1_loop(N,Nu,K,Mp,dUp,Y,Yzad)
         end
     else; error('Yzad should be a 1xN = 1x%d vector',N); 
     end
+    dUp_check(D,dUp);
     
     Y0 = Y+Mp*dUp;
     dU = K*(Yzad-Y0);
@@ -150,6 +142,25 @@ function du = dmc_1x1_loop(N,Nu,K,Mp,dUp,Y,Yzad)
 end
 
 %% Algorithm itself (minimalistic form assuming Yzad constant on the prediction horison)
-function du = dmc_1x1_loop_min(N,Nu,Ku,Ke,dUp,Y,Yzad)
-    du = Ke*(Yzad(1)-Y(1)) - Ku*dUp;
+function du = dmc_1x1_loop_min(D,Ku,Ke,dUp,y,yzad)
+    % yzad check
+    if(~isscalar(yzad)); error('yzad should be a scalar\n'); end
+    
+    % y check
+    if(~isscalar(y)); error('y should be a scalar\n'); end
+    
+    dUp_check(D,dUp);
+    du = Ke*(yzad-y) - Ku*dUp;
+end
+
+function dUp_check(D, dUp)
+    % dUp check
+    if(isvector(dUp))
+        if(length(dUp) ~= (D-1)); error('Vector dUp should have a size of D-1=%d instead of %d',D-1,length(dUp));
+        elseif(size(dUp,1)~=(D-1)); dUp = dUp';
+        end
+    else
+        error('dUp is not a vector');
+    end
+
 end

@@ -27,13 +27,13 @@ while length(y)~=2000    % zbieramy 100 pomiarow
     u=[u;U];            % powiekszamy wektor u o element U
 end
 
-close all;
+%close all;
 figure;
 plot(y); hold on;
 stairs(z,'k--'); hold off;
-y = [0;0;y]; YY=y(1:2000);
-u = [0;0;u]; UU=u(1:2000);
-z = [0;0;z]; ZZ=z(1:2000);
+YY=y(1:2000);
+UU=u(1:2000);
+ZZ=z(1:2000);
 
 figure;
 stairs(u)
