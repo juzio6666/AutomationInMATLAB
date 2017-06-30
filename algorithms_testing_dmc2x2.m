@@ -1,4 +1,4 @@
-%clearvars
+clearvars
 %close all
 
 %% Algorytm DMC 2x2 (benchmark)
@@ -6,79 +6,155 @@
 %      input 1        input 2
 Gs = [tf( 1,[.7 1]), tf( 5,[.3 1]);  % output 1
       tf( 1,[.5 1]), tf( 2,[.4 1])]; % output 2
-Gz = c2d(Gs,0.05,'zoh');
+Tp = 0.005;
+Gz = c2d(Gs,Tp,'zoh');
 ny = 2;
 nu = 2;
-for m=1:ny
-    for n=1:nu
-        aa(m,n) = Gz(m,n).Denominator{1}(2);
-        bb(m,n,:) = Gz(m,n).Numerator{1}(2:end);
+
+% Based on STP script, pages 79 (tab. 3.1) and 86 (eq. 3.49)
+for m=1:2
+    for n=1:2
+        alfa = exp(-1/Gs(m,n).Denominator{1}(1)*Tp);
+        B(m,n) = Gs(m,n).Numerator{1}(2)*(1-alfa);
+        A(m,n) =                           -alfa ;
     end
 end
-return
+
+% Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
+for m=1:2
+    a(m,:)   = [A(m,1)+A(m,2), A(m,1)*A(m,2)];
+    b(m,1,:) = [B(m,1), A(m,2)*B(m,1)];
+    b(m,2,:) = [B(m,2), A(m,1)*B(m,2)];
+end
+na = size(a,2);
+nb = size(b,3);
+
 umax =  1;
 umin = -1;
 
-% OdpowiedŸ skokowa
-S = step(Gz);
-S = S(2:end); % usuwanie pierwszego elementu odpowiedzi skokowej -- KONIECZNE!
+% OdpowiedŸ skokowa (o wymiarach (D,ny,nu))
+S = step(Gz(:,:));
+S = shiftdim(S(2:end,:,:),1); % usuwanie pierwszego elementu odpowiedzi 
+                              % skokowej -- KONIECZNE! jednoczeœnie
+                              % zmieniona zosta³a kolejnoœæ indeksów
+
+% % W³asnorêcznie wyznaczana odpowiedŸ skokowa
+% S = zeros(ny,nu,1000);
+% for k = 1:size(S,3)
+%     % symulacja obiektu regulacji
+%     for m=1:ny
+%         for n=1:nu
+%             for i=1:min(k,nb)
+%                 S(m,n,k) = S(m,n,k) + b(m,n,i)*1;
+%             end
+%             for i=1:min(k-1,na)
+%                 S(m,n,k) = S(m,n,k) - a(m,i)*S(m,n,k-i);
+%             end         
+%         end   
+%     end 
+% end
+
+
+% Horyzont dynamiki
+D = size(S,3);
 
 % Horyzonty predykcji i sterowania
-N = 50; 
-Nu = 50;
+N  = 10; 
+Nu = 5;
 
 % Wartoœci trajektorii zadanej
-yzad(1:2000) = 0;
-yzad(   1: end) = -.8;
-%yzad( 200: end) =  .1;
-yzad( 400: end) = -.1;
-%yzad( 600: end) =  .7;
-yzad( 800: end) = -.3;
-%yzad(1000: end) = -.4;
-yzad(1200: end) =  .0;
-%yzad(1400: end) =  .1;
-%yzad(1600: end) =  .9;
-yzad(1800: end) = -.3;
+yzad(1:ny,1:2000) =  .0;
+yzad(1,   1: end) = -.8; yzad(2, 200: end) = -.1;
+yzad(1, 400: end) = -.1; yzad(2, 600: end) = -.2;
+yzad(1, 800: end) = -.3; yzad(2,1000: end) =  .1;
+yzad(1,1200: end) =  .0; yzad(2,1400: end) =  .0;
+yzad(1,1600: end) = -.2; yzad(2,1800: end) =  .2;
 
 % Pocz¹tkowa i koñcowa chwila symulacji
-kp = 2;
-kk = length(yzad);
+kp = max(na,nb)+1;
+kk = size(yzad,2);
 
-% Macierze Lambda oraz Psi -- wagi funkcji kosztów
-Lambda = eye(Nu);
-Psi = eye(N);
+% Macierze Lambda oraz Psi -- wagi funkcji kosztów (sta³e na horyzoncie
+% predykcji/sterowania i równe dla ka¿dego wyjœcia/wejœcia)
+Lambda = eye(Nu*nu);
+Psi    = eye(N *ny);
 
 % Wektory wartoœci sterowania oraz wyjœcia obiektu regulacji
-u = zeros(kk,1);
-y = zeros(kk,1);
+u = zeros(nu,kk);
+y = zeros(ny,kk);
+    M = cell(N,Nu);
+    Mp = cell(N,(D-1));
 
-% Horyzont dynamiki (do wyznaczania dUp)
-D = length(S);
-
-%% Symulacja
-for k = kp:kk
-    y(k) = -a*y(k-1)+b*u(k-1); % symulacja obiektu regulacji
-    
-    Yzad = ones(N,1)*yzad(k); % Yzad sta³e na horyzoncie predykcji
-%     Yzad = yzad(min(k+(1:N),kk)); % Yzad zmienne na horyzoncie predykcji
-    Y = y(k);
-    dUp = zeros(D-1,1);
-    for p = 1:(D-1)
-        if(k-p > 0); dUp(p) = u(k-p); end
-        if(k-p-1 > 0); dUp(p) = dUp(p)-u(k-p-1); end
+    % Matrix M
+    for row = 1:N
+       for col = 1:Nu
+            if(row-col+1 >= 1)
+                M{row,col} = S(:,:,row-col+1);
+            else
+                M{row,col} = zeros(size(S(:,:,1)));
+            end
+       end
     end
+    M=cell2mat(M);
+
+    % Matrix Mp
+    for row = 1:N
+       for col = 1:(D-1)
+            Mp{row,col} = S(:,:,min(row+col,D)) - S(:,:,col);
+       end
+    end
+    Mp = cell2mat(Mp);
     
-    du = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad); % algorytm DMC 1x1
+    K = (M'*Psi*M+Lambda)^(-1)*M';
+%% Symulacja
+wb = waitbar(0,'Simulation progress...');
+for k = kp:kk
+    % symulacja obiektu regulacji
+    for m=1:ny
+        for n=1:nu
+            for i=1:nb
+                if(k-i>=1)
+                    y(m,k) = y(m,k) + b(m,n,i)*u(n,k-i);
+                end
+            end
+        end
+        for i=1:na
+            if(k-i>=1)
+                y(m,k) = y(m,k) - a(m,i)*y(m,k-i);
+            end
+        end            
+    end 
+        
+    Yzad = repmat(eye(ny),N,1)*yzad(:,k); % Yzad sta³e na horyzoncie predykcji
+%    Yzad = reshape(yzad(:,min(k+(1:N),kk)),[],1); % Yzad zmienne na horyzoncie predykcji
+    Y = repmat(eye(ny),N,1)*y(:,k);
+    dUp = zeros(nu*(D-1),1);
+    dUpp = zeros(nu,D-1);
+    for p = 1:(D-1)
+        if(k-p > 0); dUpp(:,p) = u(:,k-p); end
+        if(k-p-1 > 0); dUpp(:,p) = dUpp(:,p)-u(:,k-p-1); end
+    end
+    dUp = reshape(dUpp,[],1);
     
-    u(k) = u(k-1)+du;
-    if(u(k)>umax); u(k) = umax; end
-    if(u(k)<umin); u(k) = umin; end
+
+    Y0 = Y+Mp*dUp;
+    dU = K*(Yzad-Y0);
+    du = dU(1:nu);
+    %du = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad); % algorytm DMC 1x1
+    
+    u(:,k) = u(:,k-1)+du;
+    for n=1:nu
+        if(u(n,k)>umax); u(n,k) = umax; end
+        if(u(n,k)<umin); u(n,k) = umin; end
+    end
+    waitbar(k/kk,wb);
 end
+close(wb)
 
 %% Rysownie przebiegów trajektorii wyjœcia, zadanej oraz sterowania
 figure;
-plot(y); hold on;
-stairs(yzad,'k--'); hold off;
+plot(y'); hold on;
+stairs(yzad','k--'); hold off;
 
 figure;
-stairs(u);
+stairs(u');

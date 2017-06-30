@@ -12,6 +12,7 @@ K=1; T=0.7; alfa=exp(-Tp/T); B11=K*(1-alfa); A11=-alfa; % G11=1/0,7s+1
 K=5; T=0.3; alfa=exp(-Tp/T); B12=K*(1-alfa); A12=-alfa; % G12=5/0,3s+1
 K=1; T=0.5; alfa=exp(-Tp/T); B21=K*(1-alfa); A21=-alfa; % G21=1/0,5s+1
 K=2; T=0.4; alfa=exp(-Tp/T); B22=K*(1-alfa); A22=-alfa; % G22=2/0,4s+1
+
 as(1,1)=A11+A12; as(1,2)=A11*A12;
 as(2,1)=A21+A22; as(2,2)=A21*A22;
 % %b(m,n,i), m - wyjœcie, n - wejœcie, i - przesuniêcie

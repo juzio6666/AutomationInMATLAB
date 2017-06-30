@@ -5,7 +5,7 @@ s = serial('COM3'); % COM9 to jest port utworzony przez mikrokontroler
 set(s,'BaudRate',115200);
 set(s,'StopBits',1);
 set(s,'Parity','none');
-set(s,'DataBits',8);
+set(s,'DataBits',8); 
 set(s,'Timeout',100000);
 set(s,'InputBufferSize',1000);
 set(s,'Terminator',13);
