@@ -1,0 +1,50 @@
+% TODO !!!
+stuff = '';
+%clearvars;
+%load('gpc2x2_001');
+
+stuff = [stuff, sprintf('#define N %d;\n',N)];
+stuff = [stuff, sprintf('#define Nu %d;\n',Nu)];
+
+na = length(a);
+nb = length(b);
+stuff = [stuff, sprintf('#define na %d;\n',na)];
+stuff = [stuff, sprintf('#define nb %d;\n',nb)];
+
+stuff = [stuff, sprintf('#define nu %d;\n',nu)];
+stuff = [stuff, sprintf('#define ny %d;\n',ny)];
+
+stuff = [stuff, sprintf('const float b[ny][nu][nb] = {')];
+for m=1:ny
+    stuff = [stuff, '{'];
+    for n=1:nu
+        stuff = [stuff, '{'];
+        for i=1:nb
+            stuff = [stuff, sprintf('%+.6e,',b(m,n,i))];
+        end
+        stuff = [stuff, '},'];
+    end
+    stuff = [stuff, '},'];
+end
+stuff = [stuff, sprintf('};\n')];
+
+stuff = [stuff, sprintf('const float a[ny,na] = {')];
+for m=1:ny
+    stuff = [stuff, '{'];
+    for i=1:na
+        stuff = [stuff, sprintf('%+.6e,',a(i))];   
+    end     
+    stuff = [stuff, '},'];
+end 
+stuff = [stuff, sprintf('};\n')];
+
+% Knu
+stuff = [stuff, sprintf('const float Knu[nu*N] = {')];
+for n=1:nu
+    for i=1:N
+        stuff = [stuff, sprintf('%+.6e,',Knu(nu,i))];    
+    end
+end
+stuff = [stuff, sprintf('};\n')];
+
+clipboard('copy', stuff);

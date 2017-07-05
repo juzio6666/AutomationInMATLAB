@@ -11,7 +11,7 @@ du = gpc_1x1_loop(a,b,N,Knu,u,y,Yzad);
 
 end
 
-function Knu = gpc_1x1_const_data(a,b,N,Nu,Lambda,Psi)
+function Knu = gpc_1x1_init(a,b,N,Nu,Lambda,Psi)
     %% Here should be all of the correctness checking.
     % N check
     if(~isscalar(N)); error('N should ba a scalar'); end

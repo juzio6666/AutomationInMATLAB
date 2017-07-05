@@ -106,6 +106,12 @@ y = zeros(ny,kk);
     Mp = cell2mat(Mp);
     
     K = (M'*Psi*M+Lambda)^(-1)*M';
+    Ku=K*Mp; Ku = Ku(1:nu,:);
+    
+    Ke=zeros(nu,1);
+    for n=1:nu
+        Ke(n) = sum(K(1:nu,n:ny:end));
+    end
 %% Symulacja
 wb = waitbar(0,'Simulation progress...');
 for k = kp:kk
@@ -136,10 +142,9 @@ for k = kp:kk
     end
     dUp = reshape(dUpp,[],1);
     
-
-    Y0 = Y+Mp*dUp;
-    dU = K*(Yzad-Y0);
-    du = dU(1:nu);
+%     dU = K*(Yzad-Y)-K*Mp*dUp;
+%     du = dU(1:nu);
+    du = Ke*(Yzad-Y) - Ku*dUp
     %du = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad); % algorytm DMC 1x1
     
     u(:,k) = u(:,k-1)+du;
