@@ -6,7 +6,7 @@ function [du, Knu] = gpc_1x1(a,b,N,Nu,Lambda,Psi,u,y,Yzad)
 % y(k) --> y(na+1)
 % u(k-1) --> u(nb)
 
-Knu = gpc_1x1_init(a,b,N,Nu,Lambda,Psi);
+Knu = gpc_1x1_const_data(a,b,N,Nu,Lambda,Psi);
 du = gpc_1x1_loop(a,b,N,Knu,u,y,Yzad);
 
 end

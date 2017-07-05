@@ -33,8 +33,8 @@ umax =  1;
 umin = -1;
 
 % Horyzonty predykcji i sterowania
-N  = 10; 
-Nu = 5;
+N  = 50; 
+Nu = 50;
 
 % Wartoœci trajektorii zadanej
 yzad(1:ny,1:2000) =  .0;
@@ -139,20 +139,20 @@ for k = 10:kk
                 for i=1:nb
                     if(-i+p<=-1)
                         Y0(m,p) = Y0(m,p) + b(m,n,i)*u(n,k-i+p);
-                        fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-i+p,b(m,n,i),u(n,k-i+p));
+%                         fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-i+p,b(m,n,i),u(n,k-i+p));
                     else
                         Y0(m,p) = Y0(m,p) + b(m,n,i)*u(n,k-1);
-                        fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-1,b(m,n,i),u(n,k-1));
+%                         fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-1,b(m,n,i),u(n,k-1));
                     end
                 end
             end
             for i=1:na
                 if(-i+p<=0)
                     Y0(m,p) = Y0(m,p) - a(m,i)*y(m,k-i+p);
-                    fprintf('Y0(%d,%d) -= a(%d,%d)*y(%d,%d) = %f*%f;\n',m,p,m,i,m,k-i+p,a(m,i),y(m,k-i+p));
+%                     fprintf('Y0(%d,%d) -= a(%d,%d)*y(%d,%d) = %f*%f;\n',m,p,m,i,m,k-i+p,a(m,i),y(m,k-i+p));
                 else
                     Y0(m,p) = Y0(m,p) - a(m,i)*Y0(m,-i+p);
-                    fprintf('Y0(%d,%d) -= a(%d,%d)*Y0(%d,%d) = %f*%f;\n',m,p,m,i,m,-i+p,a(m,i),Y0(m,-i+p));
+%                     fprintf('Y0(%d,%d) -= a(%d,%d)*Y0(%d,%d) = %f*%f;\n',m,p,m,i,m,-i+p,a(m,i),Y0(m,-i+p));
                 end
             end            
         end

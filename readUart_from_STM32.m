@@ -17,7 +17,7 @@ z = [];    % wektor wyjsc obiektu6
 u = [];    % wektor wejsc (sterowan) obiektu
 
 while length(y)~=2000    % zbieramy 100 pomiarow
-    txt = fread(s,33);  % odczytanie z portu szeregowego
+    txt = fread(s,84);  % odczytanie z portu szeregowego
                         % txt powinien zawieraæ "Y=%4d;U=%4d;"
                         % czyli np. "Y=1234;U=3232;"
     disp(char(txt'));disp('\n');
@@ -30,10 +30,4 @@ end
 %close all;
 figure;
 plot(y); hold on;
-stairs(z,'k--'); hold off;
-YY=y(1:2000);
-UU=u(1:2000);
-ZZ=z(1:2000);
-
-figure;
-stairs(u)
+plot(z,'--'); hold off;

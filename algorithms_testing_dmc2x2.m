@@ -23,8 +23,8 @@ end
 % Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
 for m=1:2
     a(m,:)   = [A(m,1)+A(m,2), A(m,1)*A(m,2)];
-    b(m,1,:) = [B(m,1), A(m,2)*B(m,1)];
-    b(m,2,:) = [B(m,2), A(m,1)*B(m,2)];
+    b(m,1,:) = [0, B(m,1), A(m,2)*B(m,1)];
+    b(m,2,:) = [0, B(m,2), A(m,1)*B(m,2)];
 end
 na = size(a,2);
 nb = size(b,3);
@@ -57,6 +57,7 @@ S = shiftdim(S(2:end,:,:),1); % usuwanie pierwszego elementu odpowiedzi
 
 % Horyzont dynamiki
 D = size(S,3);
+D = 200;
 
 % Horyzonty predykcji i sterowania
 N  = 10; 
@@ -110,7 +111,9 @@ y = zeros(ny,kk);
     
     Ke=zeros(nu,1);
     for n=1:nu
-        Ke(n) = sum(K(1:nu,n:ny:end));
+        for m=1:ny
+            Ke(n,m) = sum(K(n,m:ny:end));
+        end
     end
 %% Symulacja
 wb = waitbar(0,'Simulation progress...');
@@ -130,11 +133,7 @@ for k = kp:kk
             end
         end            
     end 
-        
-    Yzad = repmat(eye(ny),N,1)*yzad(:,k); % Yzad sta³e na horyzoncie predykcji
-%    Yzad = reshape(yzad(:,min(k+(1:N),kk)),[],1); % Yzad zmienne na horyzoncie predykcji
-    Y = repmat(eye(ny),N,1)*y(:,k);
-    dUp = zeros(nu*(D-1),1);
+
     dUpp = zeros(nu,D-1);
     for p = 1:(D-1)
         if(k-p > 0); dUpp(:,p) = u(:,k-p); end
@@ -142,10 +141,7 @@ for k = kp:kk
     end
     dUp = reshape(dUpp,[],1);
     
-%     dU = K*(Yzad-Y)-K*Mp*dUp;
-%     du = dU(1:nu);
-    du = Ke*(Yzad-Y) - Ku*dUp
-    %du = dmc_1x1(S,N,Nu,Lambda,Psi,dUp,Y,Yzad); % algorytm DMC 1x1
+    du = Ke*(yzad(:,k)-y(:,k)) - Ku*dUp;
     
     u(:,k) = u(:,k-1)+du;
     for n=1:nu

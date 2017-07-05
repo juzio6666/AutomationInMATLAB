@@ -53,5 +53,5 @@ for n=1:nu
     if(n~=nu); stuff = [stuff, newline]; end
 end
 stuff = [stuff, sprintf('};\n')];
-
+fprintf(stuff);
 clipboard('copy', stuff);
