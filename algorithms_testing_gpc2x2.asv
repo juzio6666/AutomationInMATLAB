@@ -1,4 +1,3 @@
-clear all;
 clearvars
 global N a b na nb nu ny
 close all
@@ -35,8 +34,8 @@ umax =  1;
 umin = -1;
 
 % Horyzonty predykcji i sterowania
-N  = 5; 
-Nu = 2;
+N  = 50; 
+Nu = 50;
 
 % Wartoœci trajektorii zadanej
 yzad(1:ny,1:2000) =  .0;
@@ -91,22 +90,6 @@ M=cell2mat(M);
 
 K = (M'*Psi*M+Lambda)^(-1)*M';
 Knu = K(1:nu,:);
-Kyzad = sum(Knu,2);
-Ku = zeros(ny,nu,nb);
-
-Ky = zeros(ny,nu,na+1);
-for m=1:ny
-    for i=0
-        for p=1:N
-            Ky(:,m,1) = Ky(:,m,1)+K(1:nu,ny*(p-1)+m)*fun_f(p,0,m);
-        end
-    end
-    for i=1:na
-        for p=1:N
-            Ky(:,m,i+1) = Ky(:,m,i+1)+K(1:nu,ny*(p-1)+m)*fun_f(p,i,m);
-        end
-    end
-end
     
 %% Symulacja
 % wb = waitbar(0,'Simulation progress...');
@@ -221,30 +204,29 @@ function out = fun_e(p,j)
     end
 end
 
-function out = fun_f(p,j,m)
+function out = fun_f(p,j)
     % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
-    global N a b na nb
-    fprintf('N=%d, p=%d, j=%d, m=%d\n',N,p,j,m);
+    global N a b na nb nu ny
     if(p == 1)
         if(j==0)
-            out = 1 - a(m,1);
+            out = 1 - a(1);
         elseif(j>=1 && j<=(na-1))
-            out = a(m,j)-a(m,j+1);
+            out = a(j)-a(j+1);
         elseif(j==na)
-            out = a(m,j);
+            out = a(j);
         else
             error('Coœ posz³o nie tak1! Parametry wywo³ania:\np=%d; j=%d; na=%d;\n',p,j,na);
         end
     elseif(p>=2 && p<=N)
         if(j>=0 && j<=(na-1))
-            out = fun_f(p-1,0,m)*fun_f(1,j,m)+fun_f(p-1,j+1,m);
+            out = fun_f(p-1,0)*fun_f(1,j)+fun_f(p-1,j+1);
         elseif(j==na)
-            out = fun_f(p-1,0,m)*fun_f(1,j,m);
+            out = fun_f(p-1,0)*fun_f(1,j);
         else
             error('Coœ posz³o nie tak2! Parametry wywo³ania:\np=%d; j=%d; na=%d;\n',p,j,na);
         end
     else
-        error('Coœ posz³o nie tak3! Parametry wywo³ania:\np=%d; j=%d; N=%d;\n',p,j,N);
+        error('Coœ posz³o nie tak3! Parametry wywo³ania:\np=%d; j=%d; na=%d;\n',p,j,na);
     end
 end
 
