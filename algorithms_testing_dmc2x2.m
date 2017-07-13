@@ -83,38 +83,38 @@ Psi    = eye(N *ny);
 % Wektory wartoœci sterowania oraz wyjœcia obiektu regulacji
 u = zeros(nu,kk);
 y = zeros(ny,kk);
-    M = cell(N,Nu);
-    Mp = cell(N,(D-1));
+M = cell(N,Nu);
+Mp = cell(N,(D-1));
 
-    % Matrix M
-    for row = 1:N
-       for col = 1:Nu
-            if(row-col+1 >= 1)
-                M{row,col} = S(:,:,row-col+1);
-            else
-                M{row,col} = zeros(size(S(:,:,1)));
-            end
-       end
-    end
-    M=cell2mat(M);
-
-    % Matrix Mp
-    for row = 1:N
-       for col = 1:(D-1)
-            Mp{row,col} = S(:,:,min(row+col,D)) - S(:,:,col);
-       end
-    end
-    Mp = cell2mat(Mp);
-    
-    K = (M'*Psi*M+Lambda)^(-1)*M';
-    Ku=K*Mp; Ku = Ku(1:nu,:);
-    
-    Ke=zeros(nu,1);
-    for n=1:nu
-        for m=1:ny
-            Ke(n,m) = sum(K(n,m:ny:end));
+% Matrix M
+for row = 1:N
+   for col = 1:Nu
+        if(row-col+1 >= 1)
+            M{row,col} = S(:,:,row-col+1);
+        else
+            M{row,col} = zeros(size(S(:,:,1)));
         end
+   end
+end
+M=cell2mat(M);
+
+% Matrix Mp
+for row = 1:N
+   for col = 1:(D-1)
+        Mp{row,col} = S(:,:,min(row+col,D)) - S(:,:,col);
+   end
+end
+Mp = cell2mat(Mp);
+
+K = (M'*Psi*M+Lambda)^(-1)*M';
+Ku=K*Mp; Ku = Ku(1:nu,:);
+
+Ke=zeros(nu,1);
+for n=1:nu
+    for m=1:ny
+        Ke(n,m) = sum(K(n,m:ny:end));
     end
+end
 %% Symulacja
 wb = waitbar(0,'Simulation progress...');
 for k = kp:kk

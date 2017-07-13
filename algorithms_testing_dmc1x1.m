@@ -1,5 +1,5 @@
-%clearvars
-%close all
+clearvars
+close all
 
 %% Algorytm DMC 1x1 (benchmark)
 % Obiekt regulacji

@@ -91,23 +91,23 @@ M=cell2mat(M);
 
 K = (M'*Psi*M+Lambda)^(-1)*M';
 Knu = K(1:nu,:);
-Kyzad = sum(Knu,2);
-Ku = zeros(ny,nu,nb);
 
-Ky = zeros(ny,nu,na+1);
-for m=1:ny
-    for i=0
-        for p=1:N
-            Ky(:,m,1) = Ky(:,m,1)+K(1:nu,ny*(p-1)+m)*fun_f(p,0,m);
-        end
-    end
-    for i=1:na
-        for p=1:N
-            Ky(:,m,i+1) = Ky(:,m,i+1)+K(1:nu,ny*(p-1)+m)*fun_f(p,i,m);
-        end
-    end
-end
-    
+Kyzad = sum(Knu,2);
+Ku = zeros(nu,nu,nb);   % r,n,j -> nu x nu x nb
+Ky = zeros(nu,ny,na+1); % r,m,j -> nu x ny x (na+1)
+% r -- numer sygna³u steruj¹cego, którego przyrost jest wyliczany
+% n -- numer sygna³u steruj¹cego
+% m -- numer sygna³u wyjœciowego
+% j -- dynamika sygna³u wejœciowego/wyjœciowego
+
+% Kolejnoœæ nie jest przypadkowa!
+fun_f(1,1,1);
+fun_g(1,1,1,1);
+fun_e(1,1,1,1);
+
+%% Tutaj wyznaczanie parametrów kurnj, kyrmj i kyzadrm
+for 
+
 %% Symulacja
 % wb = waitbar(0,'Simulation progress...');
 for k = 10:kk
@@ -205,69 +205,103 @@ stairs(u');
 
 
 %% Funkcje do wyznaczania minimalnej postaci algorytmu GPC
-function out = fun_e(p,j)
+function out = fun_e(p,j,m,n)
     % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
     global N a b na nb nu ny 
-    if(j==1 && nb==1)
-        out = 0;
-    elseif(j==1 && nb>1)
-        out = fun_g(p,j);
-    elseif(j>=2 && j<=(nb-1) && j<nb && nb>1)
-        out = fun_g(p,j) - fun_g(p,j-1);
-    elseif(j==nb && nb>1)
-        out = -fun_g(p,j-1);
+    persistent E o
+    
+    if(isempty(E))
+        o = 1;
+        E=cell(ny,nu,N,na+o);
+        for m=1:ny; for n=1:nu; for p=1:N; for j=(1-o):na; fun_e(p,j,m,n); end; end; end; end
+    end
+    if(~isempty(E{m,n,p,j+o}))
+        out = E{m,n,p,j+o};
     else
-        error('Coœ posz³o nie tak! Parametry wywo³ania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
+        if(j==1 && nb==1)
+            out = 0;
+        elseif(j==1 && nb>1)
+            out = fun_g(p,j,m,n);
+        elseif(j>=2 && j<=(nb-1) && j<nb && nb>1)
+            out = fun_g(p,j,m,n) - fun_g(p,j-1,m,n);
+        elseif(j==nb && nb>1)
+            out = -fun_g(p,j-1,m,n);
+        else
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(E);disp(o);error('Error!');
+        end
+        E{m,n,p,j+o} = out;
     end
 end
 
 function out = fun_f(p,j,m)
-    % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
-    global N a b na nb
-    fprintf('N=%d, p=%d, j=%d, m=%d\n',N,p,j,m);
-    if(p == 1)
-        if(j==0)
-            out = 1 - a(m,1);
-        elseif(j>=1 && j<=(na-1))
-            out = a(m,j)-a(m,j+1);
-        elseif(j==na)
-            out = a(m,j);
-        else
-            error('Coœ posz³o nie tak1! Parametry wywo³ania:\np=%d; j=%d; na=%d;\n',p,j,na);
-        end
-    elseif(p>=2 && p<=N)
-        if(j>=0 && j<=(na-1))
-            out = fun_f(p-1,0,m)*fun_f(1,j,m)+fun_f(p-1,j+1,m);
-        elseif(j==na)
-            out = fun_f(p-1,0,m)*fun_f(1,j,m);
-        else
-            error('Coœ posz³o nie tak2! Parametry wywo³ania:\np=%d; j=%d; na=%d;\n',p,j,na);
-        end
+    global N a b na nb ny nu
+    persistent F o
+    
+    if(isempty(F))
+        o = 1;
+        F=cell(ny,N,na+o);
+        for m=1:ny; for p=1:N; for j=(1-o):na; fun_f(p,j,m); end; end; end
+    end
+    if(~isempty(F{m,p,j+o}))
+        out = F{m,p,j+o};
     else
-        error('Coœ posz³o nie tak3! Parametry wywo³ania:\np=%d; j=%d; N=%d;\n',p,j,N);
+        if(p == 1)
+            if(j==0)
+                out = 1 - a(m,1);
+            elseif(j>=1 && j<=(na-1))
+                out = a(m,j)-a(m,j+1);
+            elseif(j==na)
+                out = a(m,j);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error('Error!');
+            end
+        elseif(p>=2 && p<=N)
+            if(j>=0 && j<=(na-1))
+                out = fun_f(p-1,0,m)*fun_f(1,j,m)+fun_f(p-1,j+1,m);
+            elseif(j==na)
+                out = fun_f(p-1,0,m)*fun_f(1,j,m);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error('Error!');
+            end
+        else
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error('Error!');
+        end
+        F{m,p,j+o} = out;
     end
 end
 
-function out = fun_g(p,j)
+function out = fun_g(p,j,m,n)
     % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
     global N a b na nb nu ny
-    if(p == 1)
-        if(j>=0 && j<=(nb-1))
-            out = b(j+1);
-        else
-            error('Coœ posz³o nie tak1! Parametry wywo³ania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
-        end
-    elseif(p>=2 && p<=N)
-        if(j>=(1-p) && j<=(-1))
-            out = fun_g(p-1,j+1);
-        elseif(j>=0 && j<=(nb-2))
-            out = fun_f(p-1,0)*fun_g(1,j)+fun_g(p-1,j+1);
-        elseif(j==(nb-1))
-            out = fun_f(p-1,0)*fun_g(1,j);
-        else
-            error('Coœ posz³o nie tak2! Parametry wywo³ania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
-        end
+    persistent G o
+    
+    if(isempty(G))
+        o = N;
+        G=cell(ny,nu,N,nb-1+o);
+        for m=1:ny; for n=1:nu; for p=1:N; for j=(1-p):(nb-1); fun_g(p,j,m,n); end; end; end; end
+    end
+    if(~isempty(G{m,n,p,j+o}))
+        out = G{m,n,p,j+o};
     else
-        error('Coœ posz³o nie tak3! Parametry wywo³ania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
+        if(p == 1)
+            if(j>=0 && j<=(nb-1))
+                out = b(m,n,j+1);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
+            end
+        elseif(p>=2 && p<=N)
+            if(j>=(1-p) && j<=(-1))
+                out = fun_g(p-1,j+1,m,n);
+            elseif(j>=0 && j<=(nb-2))
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n)+fun_g(p-1,j+1,m,n);
+            elseif(j==(nb-1))
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
+            end
+        else
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
+        end
+        G{m,n,p,j+o} = out;
     end
 end
