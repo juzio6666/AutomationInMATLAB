@@ -8,7 +8,7 @@ close all
 %      input 1        input 2
 Gs = [tf( 1,[.7 1]), tf( 5,[.3 1]);  % output 1
       tf( 1,[.5 1]), tf( 2,[.4 1])]; % output 2
-Tp = 0.005;
+Tp = 0.05;
 Gz = c2d(Gs,Tp,'zoh');
 ny = 2;
 nu = 2;
@@ -105,8 +105,40 @@ fun_f(1,1,1);
 fun_g(1,1,1,1);
 fun_e(1,1,1,1);
 
-%% Tutaj wyznaczanie parametrów kurnj, kyrmj i kyzadrm
-for 
+%% Tutaj wyznaczanie parametrów Ku, Ky
+for r=1:nu
+    for n=1:nu
+        for j=1:nb
+            Ku(r,n,j) = 0;
+            for p=1:N
+                for m=1:ny
+                    s=(p-1)*ny+m;
+                    Ku(r,n,j) = Ku(r,n,j) - K(r,s)*fun_e(p,j,m,n);
+                end
+            end
+        end
+    end
+end
+for r=1:nu
+    for m=1:ny
+        for j=0:na
+            Ky(r,m,j+1) = 0;
+            for p=1:N
+                s=(p-1)*ny+m;
+                Ky(r,m,j+1) = Ky(r,m,j+1) - K(r,s)*fun_f(p,j,m);
+            end
+        end
+    end
+end
+for r=1:nu
+    for m=1:ny
+        Kyzad(r,m) = 0;
+        for p=1:N
+            s=(p-1)*ny+m;
+            Kyzad(r,m) = Kyzad(r,m) + K(r,s);
+        end
+    end
+end
 
 %% Symulacja
 % wb = waitbar(0,'Simulation progress...');
@@ -180,10 +212,24 @@ for k = 10:kk
     
     Yzad = repmat(eye(ny),N,1)*yzad(:,k); % Yzad sta³e na horyzoncie predykcji
 %     Yzad = reshape(yzad(:,min(k+(1:N),kk)),[],1); % Yzad zmienne na horyzoncie predykcji
-  
-    
-    du = Knu*(Yzad-Y0);
-   
+     
+    du = zeros(2,1);
+    for r=1:nu
+        for m=1:ny
+            du(r) = du(r) + Kyzad(r,m)*yzad(m,k);
+        end
+        for n=1:nu
+            for j=1:nb
+                du(r) = du(r) + Ku(r,n,j)*u(n,k-j);
+            end
+        end
+        for m=1:ny
+            for j=0:na
+                du(r) = du(r) + Ky(r,m,j+1)*y(m,k-j);
+            end
+        end
+    end
+    %du = Knu*(Yzad-Y0);
     u(:,k) = u(:,k-1)+du;
     for n=1:nu
         if(u(n,k)>umax); u(n,k) = umax; end
@@ -211,9 +257,9 @@ function out = fun_e(p,j,m,n)
     persistent E o
     
     if(isempty(E))
-        o = 1;
-        E=cell(ny,nu,N,na+o);
-        for m=1:ny; for n=1:nu; for p=1:N; for j=(1-o):na; fun_e(p,j,m,n); end; end; end; end
+        o = 0;
+        E=cell(ny,nu,N,nb+o);
+        for m=1:ny; for n=1:nu; for p=1:N; for j=(1-o):nb; fun_e(p,j,m,n); end; end; end; end
     end
     if(~isempty(E{m,n,p,j+o}))
         out = E{m,n,p,j+o};
@@ -227,7 +273,10 @@ function out = fun_e(p,j,m,n)
         elseif(j==nb && nb>1)
             out = -fun_g(p,j-1,m,n);
         else
-            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(E);disp(o);error('Error!');
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);
+            disp(p);disp(j);disp(m);disp(n);
+            %disp(E);disp(o);
+            error('Error!');
         end
         E{m,n,p,j+o} = out;
     end

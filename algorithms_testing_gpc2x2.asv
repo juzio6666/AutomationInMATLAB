@@ -105,7 +105,34 @@ fun_f(1,1,1);
 fun_g(1,1,1,1);
 fun_e(1,1,1,1);
 
-%% Tutaj wyznaczanie parametrów kurnj, kyrmj i kyzadrm
+%% Tutaj wyznaczanie parametrów Ku, Ky
+for r=1:nu
+    for n=1:nu
+        for j=1:nb
+            Ku(r,n,j) = 0;
+            if(j==1 && r==n)
+                Ku(r,n,j) = Ku(r,n,j) + 1;
+            end
+            for p=1:N
+                for m=1:ny
+                    s=(p-1)*ny+m;
+                    Ku(r,n,j) = Ku(r,n,j) - K(r,s)*fun_e(p,j,m,n);
+                end
+            end
+        end
+    end
+end
+for r=1:nu
+    for m=1:ny
+        for j=1:(na+1)
+            Ky(r,m,j) = 0;
+            for p=1:N
+                s=(p-1)*ny+m;
+                Ky(r,n,j) = Ky(r,n,j) - K(r,s)*fun_f(p,j,m);
+            end
+        end
+    end
+end
 
 %% Symulacja
 % wb = waitbar(0,'Simulation progress...');
@@ -252,7 +279,7 @@ function out = fun_f(p,j,m)
             elseif(j==na)
                 out = a(m,j);
             else
-                error('Coœ posz³o nie tak1! Parametry wywo³ania:\np=%d; j=%d; na=%d;\n',p,j,na);
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error('Error!');
             end
         elseif(p>=2 && p<=N)
             if(j>=0 && j<=(na-1))
@@ -284,17 +311,17 @@ function out = fun_g(p,j,m,n)
     else
         if(p == 1)
             if(j>=0 && j<=(nb-1))
-                out = b(j+1);
+                out = b(m,n,j+1);
             else
                 disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
             end
         elseif(p>=2 && p<=N)
             if(j>=(1-p) && j<=(-1))
-                out = fun_g(p-1,j+1);
+                out = fun_g(p-1,j+1,m,n);
             elseif(j>=0 && j<=(nb-2))
-                out = fun_f(p-1,0)*fun_g(1,j)+fun_g(p-1,j+1);
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n)+fun_g(p-1,j+1,m,n);
             elseif(j==(nb-1))
-                out = fun_f(p-1,0)*fun_g(1,j);
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n);
             else
                 disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
             end
