@@ -1,9 +1,9 @@
-global N a b na nb u y kp kk
+%% Algorytm GPC 1x1 (benchmark)
 clearvars;
+global N a b na nb u y kp kk
 close all
 
-%% Algorytm GPC 1x1 (benchmark)
-% Obiekt regulacji
+%% Obiekt regulacji
 Gs = tf(1,[.7 1]);
 Gz = c2d(Gs,0.005);
 A = Gz.Denominator{1}(2);
@@ -13,57 +13,44 @@ b = Gz.Numerator{1}(2:end);
 na= length(a);
 nb= length(b);
 
-t1=1.0; t2=2.0;
-alfa1=exp(-1.0/t1); alfa2=exp(-1.0/t2);
-a(1)=-alfa1-alfa2; a(2)=alfa1*alfa2;
-b(1)=(t1/(t1-t2))*(1.0-alfa1)+(t2/(t2-t1))*(1.0-alfa2);
-b(2)=(t1/(t1-t2))*(alfa1-1.0)*alfa2+(t2/(t2-t1))*(alfa2-1.0)*alfa1;
-na=2; nb=2;
-
 % Ograniczenia
 umax =  1;
 umin = -1;
 
+%% Ogólne parametry algorytmu
 % Horyzonty predykcji i sterowania
-N = 50; 
+N  = 50; 
 Nu = 50;
 
-% Wartoœci trajektorii zadanej
-yzad(   1:2000) =  .0;
-yzad( 200: end) = -.1;
-yzad( 400: end) =  .1;
-yzad( 600: end) =  .2;
-yzad( 800: end) =  .3;
-yzad(1000: end) = -.2;
-yzad(1200: end) = -.3;
-yzad(1400: end) =  .0;
-yzad(1600: end) =  .4;
-yzad(1800: end) = -.4;
-
 % Pocz¹tkowa i koñcowa chwila symulacji
-kp = max(na,nb)+1;
-kk = length(yzad);
+kp = max(na,nb)+1+1;
+kk = 2000;
+dk = 200;
+
+% Wartoœci trajektorii zadanej
+yzad = zeros(1,kk);
+for k=dk:dk:kk
+    yzad(k:end) = rand()-.5;
+end
 
 % Macierze Lambda oraz Psi -- wagi funkcji kosztów
-Lambda = eye(Nu)*0.1;
-Psi = eye(N)*1.0;
+Lambda = eye(Nu)*1.0;
+Psi    = eye(N )*1.0;
 
 % Wektory wartoœci sterowania oraz wyjœcia obiektu regulacji
-u = zeros(kk,1);
-y = zeros(kk,1);
+u = zeros(1,kk);
+y = zeros(1,kk);
 
-% Memmory assignment
-M = zeros(N,Nu);
-S = zeros(N,1);
-
-% Vector S
+% OdpowiedŸ skokowa
+S = zeros(1,N);
 for j=1:N
     S(j) = 0;
     for i=1:min(j,nb); S(j) = S(j) + b(i); end
     for i=1:min(j-1,na); S(j) = S(j) - a(i)*S(j-i); end
 end
 
-% Matrix M
+% Macierz M
+M = zeros(N,Nu);
 for row = 1:N
    for col = 1:Nu
         if(row-col+1 >= 1)
@@ -72,53 +59,52 @@ for row = 1:N
    end
 end
 
+%% Macierze wyznaczane offline
 K = (M'*Psi*M+Lambda)^(-1)*M';
-Knu = K(1,:);
-Kyzad = sum(Knu);
+
+%% Macierze dla wersji minimalistycznej algorytmu
+% Kyzad=zeros(1,1); % zakomentowane bo MATLAB marudzi
+Ku=zeros(1,nb);     % j -> nb 
+Ky=zeros(1,na+1);   % j -> (na+1)
+% j -- dynamika sygna³u wejœciowego/wyjœciowego
 
 % Kolejnoœæ nie jest przypadkowa!
 fun_f(1,1); % inicjalizacja parametrów f
 fun_g(1,1); % inicjalizacja parametrów g
 fun_e(1,1); % inicjalizacja parametrów e
 
-Ky=zeros(1,na+1);
-for i=0
-    for p=1:N
-        Ky(1) = Ky(1)+K(1,p)*fun_f(p,0);
-    end
-end
-for i=1:na
-    for p=1:N
-        Ky(i+1) = Ky(i+1)+K(1,p)*fun_f(p,i);
-    end
-end
-Ku=zeros(1,nb);
 for i=1:nb
-    Ku(i) = 0;
     for p=1:N
         Ku(i) = Ku(i)+K(1,p)*fun_e(p,i);
     end
 end
-
-
+for i=0:na
+    for p=1:N
+        Ky(i+1) = Ky(i+1)+K(1,p)*fun_f(p,i);
+    end
+end
+Kyzad = sum(K(1,:));
 
 %% Symulacja
 for k = kp:kk
-    y(k) = -a*y(k-(1:length(a)))+b*u(k-(1:length(b))); % symulacja obiektu regulacji
+    % symulacja obiektu regulacji
+    y(k) = -a*y(k-(1:length(a)))+b*u(k-(1:length(b))); 
     
-    Yzad = ones(N,1)*yzad(k); % Yzad sta³e na horyzoncie predykcji
-    
-    U = u((k-nb):(k-1)); % last nb values (from u(k-nb) to u(k-1))
-    Y = y((k-na):k);     % last na+1 values (from y(k-na) to y(k))
-    
-    
+    % wprowadzanie zak³óceñ
+    % y(k) = y(k) + (rand()-.5)/500;
+            
+    % wyznaczanie wyjœcia modelu
     ym = 0;
     for i=1:nb; ym = ym + b(i)*u(k-i); end % u(k-i) -k=nb+1-> u(nb+1-i)
     for i=1:na; ym = ym - a(i)*y(k-i); end % y(k-i) -k=na+1-> y(na+1-i)
+    
+    % wyznaczanie d
     d = y(k) - ym;
     
-    Y0 = ones(N,1)*d;
+    % wyznaczanie Y0
+    Y0 = zeros(N,1);
     for p=1:N
+        Y0(p) = d;
         for i=1:nb
             if( p-i <= -1 )
                 Y0(p) = Y0(p) + b(i)*u(k+p-i); % u(k+p-i) -k=nb+1-> u(nb+1+p-i)
@@ -135,26 +121,38 @@ for k = kp:kk
         end 
     end
     
-%     du = Knu*(Yzad-Y0);
-%     Y0temp(k,:) = -Knu*Y0;
-%     Y0temp2(k,:) = - Ku*u(k-(1:nb)) - Ky*y(k-(0:na));
-%     Ku=fans(1:2); Ky=fans(3:5);
-    du = Kyzad*yzad(k) - Ku*u(k-(1:nb)) - Ky*y(k-(0:na));
+    % wyznaczanie Yzad (sta³e na horyzoncie predykcji)
+    Yzad = ones(N,1)*yzad(k);
+    
+    %% wyznaczenie du (pó³optymalnie)
+    du_po = K(1,:)*(Yzad-Y0);
+    
+    %% wyznaczenie du (optymalnie)
+    du = Kyzad*yzad(k) - Ku*u(k-(1:nb))' - Ky*y(k-(0:na))';
+    
+    du_diff(k) = du - du_po;
     
     u(k) = u(k-1)+du;    
     
     if(u(k)>umax); u(k) = umax; end
     if(u(k)<umin); u(k) = umin; end
 end
+
 %% Rysownie przebiegów trajektorii wyjœcia, zadanej oraz sterowania
 figure;
-plot(y); hold on;
+plot(y'); hold on;
 stairs(yzad,'k--'); hold off;
+title('Wartoœci wyjœciowe i zadane w czasie');
 
 figure;
 stairs(u);
+title('Wartoœci sterowania w czasie');
 
+figure;
+stairs(du_diff);
+title('Wartoœci b³êdu w czasie');
 
+%% Funkcje do wyznaczania minimalnej postaci algorytmu GPC
 function out = fun_g(p,j)
     % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
     global N a b na nb 
