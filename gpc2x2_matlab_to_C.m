@@ -1,10 +1,4 @@
-% TODO !!!
 stuff = '';
-%clearvars;
-%load('gpc2x2_001');
-
-stuff = [stuff, sprintf('#define N %d\n',N)];
-stuff = [stuff, sprintf('#define Nu %d\n',Nu)];
 
 na = length(a);
 nb = length(b);
@@ -43,14 +37,51 @@ for m=1:ny
 end 
 stuff = [stuff, sprintf('};\n')];
 
-% Knu
-stuff = [stuff, sprintf('float Knu[nu*N*ny] = {')];
+% Kyzad
+stuff = [stuff, sprintf('float Kyzad[nu][ny] = {')];
 for n=1:nu
-    for i=1:N*ny
-        stuff = [stuff, sprintf('%+.6e',Knu(n,i))];  
-        if(i~=N*ny || n~=nu); stuff = [stuff, ',']; end  
+    stuff = [stuff, '{'];
+    for i=1:ny
+        stuff = [stuff, sprintf('%+.6e',Kyzad(n,i))];  
+        if(i~=ny); stuff = [stuff, ',']; end  
     end 
-    if(n~=nu); stuff = [stuff, newline]; end
+    stuff = [stuff, '}'];
+    if(n~=nu); stuff = [stuff, ',']; end
+end
+stuff = [stuff, sprintf('};\n')];
+
+% Ky
+stuff = [stuff, sprintf('float Ky[nu][ny][na+1] = {')];
+for n=1:nu
+    stuff = [stuff, '{'];
+    for i=1:ny
+        stuff = [stuff, '{'];
+        for j=1:(na+1)
+            stuff = [stuff, sprintf('%+.6e',Ky(n,i,j))];  
+            if(j~=(na+1)); stuff = [stuff, ',']; end
+        end
+        stuff = [stuff, '}'];
+        if(i~=ny); stuff = [stuff, ',']; end
+    end 
+    stuff = [stuff, '}'];
+    if(n~=nu); stuff = [stuff, ',']; end
+end
+stuff = [stuff, sprintf('};\n')];
+% Ky
+stuff = [stuff, sprintf('float Ku[nu][nu][nb] = {')];
+for n=1:nu
+    stuff = [stuff, '{'];
+    for i=1:nu
+        stuff = [stuff, '{'];
+        for j=1:nb
+            stuff = [stuff, sprintf('%+.6e',Ku(n,i,j))];  
+            if(j~=nb); stuff = [stuff, ',']; end
+        end
+        stuff = [stuff, '}'];
+        if(i~=nu); stuff = [stuff, ',']; end
+    end 
+    stuff = [stuff, '}'];
+    if(n~=nu); stuff = [stuff, ',']; end
 end
 stuff = [stuff, sprintf('};\n')];
 fprintf(stuff);

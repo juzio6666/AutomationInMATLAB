@@ -5,9 +5,9 @@ close all
 
 %% Obiekt regulacji
 %      input 1        input 2
-Gs = [tf( 1,[.7 1]), tf( 5,[.03 1]);  % output 1
-      tf( 1,[.05 1]), tf( 2,[.4 1])]; % output 2
-Tp = 0.05;
+Gs = [tf( 1,[.7 1]), tf( 5,[.3 1]);  % output 1
+      tf( 1,[.5 1]), tf( 2,[.4 1])]; % output 2
+Tp = 0.005;
 Gz = c2d(Gs,Tp,'zoh');
 ny = 2;
 nu = 2;
@@ -29,10 +29,10 @@ for m=1:2
     b(m,1,:) = [0, B(m,1), A(m,2)*B(m,1)];
     b(m,2,:) = [0, B(m,2), A(m,1)*B(m,2)];
 end
-
 na = size(a,2);
 nb = size(b,3);
 
+% Ograniczenia
 umax =  1;
 umin = -1;
 
@@ -62,6 +62,7 @@ Psi    = eye(N *ny)*1.0;
 u = zeros(nu,kk);
 y = zeros(ny,kk);
 
+%% Macierze wyznaczane offline
 % OdpowiedŸ skokowa
 S = zeros(ny,nu,N);
 for k = 1:size(S,3)
@@ -90,7 +91,7 @@ for row = 1:N
 end
 M=cell2mat(M);
 
-%% Macierze wyznaczane offline
+% Macierz K
 K = (M'*Psi*M+Lambda)^(-1)*M';
 
 %% Macierze dla wersji minimalistycznej algorytmu
@@ -256,7 +257,7 @@ title('Wartoœci b³êdu w czasie');
 
 %% Funkcje do wyznaczania minimalnej postaci algorytmu GPC
 function out = fun_e(p,j,m,n)
-    % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
+    % wartoœci N, a, b, na, nb, nu, ny musz¹ ju¿ byæ w workspace'ie
     global N a b na nb nu ny 
     persistent E o
     
@@ -287,7 +288,8 @@ function out = fun_e(p,j,m,n)
 end
 
 function out = fun_f(p,j,m)
-    global N a b na nb ny nu
+    % wartoœci N, a, b, na, nb, nu, ny musz¹ ju¿ byæ w workspace'ie
+    global N a b na nb nu ny 
     persistent F o
     
     if(isempty(F))
@@ -324,7 +326,7 @@ function out = fun_f(p,j,m)
 end
 
 function out = fun_g(p,j,m,n)
-    % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
+    % wartoœci N, a, b, na, nb, nu, ny musz¹ ju¿ byæ w workspace'ie
     global N a b na nb nu ny
     persistent G o
     

@@ -41,6 +41,7 @@ Psi    = eye(N )*1.0;
 u = zeros(1,kk);
 y = zeros(1,kk);
 
+%% Macierze wyznaczane offline
 % Odpowiedü skokowa
 S = zeros(1,N);
 for j=1:N
@@ -59,7 +60,7 @@ for row = 1:N
    end
 end
 
-%% Macierze wyznaczane offline
+% Macierz K
 K = (M'*Psi*M+Lambda)^(-1)*M';
 
 %% Macierze dla wersji minimalistycznej algorytmu
