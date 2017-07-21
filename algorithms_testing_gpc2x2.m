@@ -1,36 +1,62 @@
 %% Algorytm DMC 2x2 (benchmark)
-clearvars
+clear all
 global N a b na nb nu ny
-close all
+%close all
 
-%% Obiekt regulacji
-%      input 1        input 2
-Gs = [tf( 1,[.7 1]), tf( 5,[.3 1]);  % output 1
-      tf( 1,[.5 1]), tf( 2,[.4 1])]; % output 2
-Tp = 0.005;
-Gz = c2d(Gs,Tp,'zoh');
+mu   =[-0.165315345000003,-0.065108360000001]*0;
+sigma=[ 0.001148139448443, 0.001082560427385]*0;
+
+obiekt_losowy = 0;
 ny = 2;
 nu = 2;
+%% Obiekt regulacji
+if(obiekt_losowy == 0)
+    inercje = 2;
 
-% Based on STP script, pages 79 (tab. 3.1) and 86 (eq. 3.49)
-A = zeros(2,2);
-B = zeros(2,2);
-for m=1:2
-    for n=1:2
-        alfa = exp(-1/Gs(m,n).Denominator{1}(1)*Tp);
-        B(m,n) = Gs(m,n).Numerator{1}(2)*(1-alfa);
-        A(m,n) =                           -alfa ;
+    pobj = [.7, .3; .5, .4];
+    ppobj = cell(2,2);
+    for m=1:2
+        for n=1:2
+            ppobj{m,n} = [pobj(m,n) 1];
+            for i=2:inercje
+                ppobj{m,n} = conv([pobj(m,n) 1], ppobj{m,n}); %(pobj(m,n)*s+1)^n
+            end
+        end
+    end
+
+    %     input 1            input 2
+    Gs = [tf( 1,ppobj{1,1}), tf( 5,ppobj{1,2});  % output 1
+          tf( 1,ppobj{2,1}), tf( 2,ppobj{2,2})]; % output 2
+    Tp = 0.005;
+    Gz = c2d(Gs,Tp,'zoh');
+
+    % Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
+    for m=1:2
+        tmpa = conv(Gz.Denominator{m,1},Gz.Denominator{m,2});
+        a(m,:) = tmpa(2:end);
+    
+        tmpb = conv(Gz.Numerator{m,1},Gz.Denominator{m,2});
+        b(m,1,:) = tmpb;
+    
+        tmpb = conv(Gz.Numerator{m,2},Gz.Denominator{m,1});
+        b(m,2,:) = tmpb;
+    end
+    na = size(a,2);
+    nb = size(b,3);
+else
+    na = 10;
+    nb = 30; 
+    for m=1:ny
+        a(m,:)   = rand(1,na);
+        for n=1:nu
+            if(m==n)
+                b(m,n,:) = rand(1,1,nb);
+            else
+                b(m,n,:) = rand(1,1,nb)*0.1;
+            end
+        end
     end
 end
-
-% Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
-for m=1:2
-    a(m,:)   = [A(m,1)+A(m,2), A(m,1)*A(m,2)];
-    b(m,1,:) = [0, B(m,1), A(m,2)*B(m,1)];
-    b(m,2,:) = [0, B(m,2), A(m,1)*B(m,2)];
-end
-na = size(a,2);
-nb = size(b,3);
 
 % Ograniczenia
 umax =  1;
@@ -38,7 +64,7 @@ umin = -1;
 
 %% Ogólne parametry algorytmu
 % Horyzonty predykcji i sterowania
-N  = 50; 
+N  = 500; 
 Nu = 50;
 
 % Pocz¹tkowa i koñcowa chwila symulacji
@@ -50,7 +76,7 @@ dk = 200;
 yzad = zeros(ny,kk);
 for k=dk:dk:kk
     for m=1:ny
-        yzad(m,(k-(m-1)*dk/ny):end) = rand()-.5;
+        yzad(m,(k-(m-1)*dk/ny):end) = (rand()*2-1)*0.1;
     end
 end
 
@@ -61,6 +87,7 @@ Psi    = eye(N *ny)*1.0;
 % Wektory wartoœci sterowania oraz wyjœcia obiektu regulacji
 u = zeros(nu,kk);
 y = zeros(ny,kk);
+ys = zeros(ny,kk);
 
 %% Macierze wyznaczane offline
 % OdpowiedŸ skokowa
@@ -92,10 +119,10 @@ end
 M=cell2mat(M);
 
 % Macierz K
-K = (M'*Psi*M+Lambda)^(-1)*M';
+K = (M'*Psi*M+Lambda)^(-1)*M'*Psi;
 
 %% Macierze dla wersji minimalistycznej algorytmu
-Kyzad = zeros(nu,ny);
+Kyzad = zeros(nu,ny);   % r,m
 Ku = zeros(nu,nu,nb);   % r,n,j -> nu x nu x nb
 Ky = zeros(nu,ny,na+1); % r,m,j -> nu x ny x (na+1)
 % r -- numer sygna³u steruj¹cego, którego przyrost jest wyliczany
@@ -140,27 +167,30 @@ for r=1:nu
     end
 end
 
+%% Generacja macierzy
+gpc2x2_matlab_to_C
+
 %% Symulacja
-dudiff = zeros(nu,kk);
+du_diff = zeros(nu,kk);
 for k = kp:kk
     % symulacja obiektu regulacji
     for m=1:ny
         for n=1:nu
             for i=1:nb
                 if(k-i>=1)
-                    y(m,k) = y(m,k) + b(m,n,i)*u(n,k-i);
+                    ys(m,k) = ys(m,k) + b(m,n,i)*u(n,k-i);
                 end
             end
         end
         for i=1:na
             if(k-i>=1)
-                y(m,k) = y(m,k) - a(m,i)*y(m,k-i);
+                ys(m,k) = ys(m,k) - a(m,i)*ys(m,k-i);
             end
-        end         
+        end            
     end 
     
-    % wprowadzanie zak³óceñ
-    % for m=1:ny; y(m,k) = y(m,k) + (rand()-.5)/500; end;
+    % wprowadzanie zak³óceñ    
+    y(:,k) = ys(:,k) + normrnd(mu,sigma)';
      
     % wyznaczanie wyjœcia modelu
     ym = zeros(ny,1);
@@ -233,7 +263,7 @@ for k = kp:kk
     
     du_diff(1:nu,k) = du-du_po;
     
-    u(:,k) = u(:,k-1)+du;
+    u(:,k) = u(:,k-1)+du_po;
     
     for n=1:nu
         if(u(n,k)>umax); u(n,k) = umax; end
@@ -243,6 +273,20 @@ end
 
 %% Rysownie przebiegów trajektorii wyjœcia, zadanej oraz sterowania
 figure;
+for m=1:ny
+    for n=1:nu
+        subplot(ny,nu,((m-1)*nu+n));
+        plot(Tp*((1:size(S,3))-1),squeeze(S(m,n,:)));
+        xlim([0,4]);
+        if(m==1)
+            ylim([0,5]);
+        else
+            ylim([0,2]);
+        end
+    end
+end
+
+figure;
 plot(y'); hold on;
 stairs(yzad','k--'); hold off;
 title('Wartoœci wyjœciowe i zadane w czasie');
@@ -251,18 +295,17 @@ figure;
 stairs(u');
 title('Wartoœci sterowania w czasie');
 
-figure;
-stairs(du_diff');
-title('Wartoœci b³êdu w czasie');
+% figure;
+% stairs(du_diff');
+% title('Wartoœci b³êdu w czasie');
 
 %% Funkcje do wyznaczania minimalnej postaci algorytmu GPC
 function out = fun_e(p,j,m,n)
     % wartoœci N, a, b, na, nb, nu, ny musz¹ ju¿ byæ w workspace'ie
-    global N a b na nb nu ny 
-    persistent E o
+    global N a b na nb nu ny E
     
+    o = 0;
     if(isempty(E))
-        o = 0;
         E=cell(ny,nu,N,nb+o);
         for m=1:ny; for n=1:nu; for p=1:N; for j=(1-o):nb; fun_e(p,j,m,n); end; end; end; end
     end
@@ -289,11 +332,10 @@ end
 
 function out = fun_f(p,j,m)
     % wartoœci N, a, b, na, nb, nu, ny musz¹ ju¿ byæ w workspace'ie
-    global N a b na nb nu ny 
-    persistent F o
+    global N a b na nb nu ny F
     
+    o = 1;
     if(isempty(F))
-        o = 1;
         F=cell(ny,N,na+o);
         for m=1:ny; for p=1:N; for j=(1-o):na; fun_f(p,j,m); end; end; end
     end
@@ -327,11 +369,10 @@ end
 
 function out = fun_g(p,j,m,n)
     % wartoœci N, a, b, na, nb, nu, ny musz¹ ju¿ byæ w workspace'ie
-    global N a b na nb nu ny
-    persistent G o
+    global N a b na nb nu ny G
     
+    o = N;
     if(isempty(G))
-        o = N;
         G=cell(ny,nu,N,nb-1+o);
         for m=1:ny; for n=1:nu; for p=1:N; for j=(1-p):(nb-1); fun_g(p,j,m,n); end; end; end; end
     end

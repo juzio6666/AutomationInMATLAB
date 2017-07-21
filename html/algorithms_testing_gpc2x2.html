@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>algorithms_testing_gpc2x2</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-07-12"><meta name="DC.source" content="algorithms_testing_gpc2x2.m"><style type="text/css">
+      --><title>algorithms_testing_gpc2x2</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-07-20"><meta name="DC.source" content="algorithms_testing_gpc2x2.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -66,88 +66,91 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
 
 
-  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Algorytm DMC 2x2 (benchmark)</a></li><li><a href="#3">Symulacja</a></li><li><a href="#4">Rysownie przebieg&oacute;w trajektorii wyj&#347;cia, zadanej oraz sterowania</a></li><li><a href="#5">Funkcje do wyznaczania minimalnej postaci algorytmu GPC</a></li></ul></div><pre class="codeinput"><span class="keyword">global</span> N a b na nb nu ny
-clear <span class="string">all</span>;
-clearvars
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Algorytm DMC 2x2 (benchmark)</a></li><li><a href="#2">Obiekt regulacji</a></li><li><a href="#3">Og&oacute;lne parametry algorytmu</a></li><li><a href="#4">Macierze wyznaczane offline</a></li><li><a href="#5">Macierze dla wersji minimalistycznej algorytmu</a></li><li><a href="#6">Wyznaczanie parametr&oacute;w Ku, Ky</a></li><li><a href="#7">Generacja macierzy</a></li><li><a href="#8">Symulacja</a></li><li><a href="#10">wyznaczenie du (p&oacute;&#322;optymalnie)</a></li><li><a href="#11">wyznaczenie du (optymalnie)</a></li><li><a href="#13">Rysownie przebieg&oacute;w trajektorii wyj&#347;cia, zadanej oraz sterowania</a></li><li><a href="#14">Funkcje do wyznaczania minimalnej postaci algorytmu GPC</a></li></ul></div><h2 id="1">Algorytm DMC 2x2 (benchmark)</h2><pre class="codeinput">clear <span class="string">all</span>
+<span class="keyword">global</span> N a b na nb nu ny
 close <span class="string">all</span>
-</pre><pre class="codeoutput">Warning: The value of local variables may have been changed to match the
-globals.  Future versions of MATLAB will require that you declare a variable to
-be global before you use that variable. 
-Warning: The value of local variables may have been changed to match the
-globals.  Future versions of MATLAB will require that you declare a variable to
-be global before you use that variable. 
-Warning: The value of local variables may have been changed to match the
-globals.  Future versions of MATLAB will require that you declare a variable to
-be global before you use that variable. 
-Warning: The value of local variables may have been changed to match the
-globals.  Future versions of MATLAB will require that you declare a variable to
-be global before you use that variable. 
-Warning: The value of local variables may have been changed to match the
-globals.  Future versions of MATLAB will require that you declare a variable to
-be global before you use that variable. 
-Warning: The value of local variables may have been changed to match the
-globals.  Future versions of MATLAB will require that you declare a variable to
-be global before you use that variable. 
-Warning: The value of local variables may have been changed to match the
-globals.  Future versions of MATLAB will require that you declare a variable to
-be global before you use that variable. 
-</pre><h2 id="2">Algorytm DMC 2x2 (benchmark)</h2><p>Obiekt regulacji      input 1        input 2</p><pre class="codeinput">Gs = [tf( 1,[.7 1]), tf( 5,[.3 1]);  <span class="comment">% output 1</span>
-      tf( 1,[.5 1]), tf( 2,[.4 1])]; <span class="comment">% output 2</span>
-Tp = 0.005;
-Gz = c2d(Gs,Tp,<span class="string">'zoh'</span>);
+
+obiekt_losowy = 0;
 ny = 2;
 nu = 2;
+</pre><h2 id="2">Obiekt regulacji</h2><pre class="codeinput"><span class="keyword">if</span>(obiekt_losowy == 0)
+    inercje = 2;
 
-<span class="comment">% Based on STP script, pages 79 (tab. 3.1) and 86 (eq. 3.49)</span>
-<span class="keyword">for</span> m=1:2
-    <span class="keyword">for</span> n=1:2
-        alfa = exp(-1/Gs(m,n).Denominator{1}(1)*Tp);
-        B(m,n) = Gs(m,n).Numerator{1}(2)*(1-alfa);
-        A(m,n) =                           -alfa ;
+    pobj = [.7, .3; .5, .4];
+    ppobj = cell(2,2);
+    <span class="keyword">for</span> m=1:2
+        <span class="keyword">for</span> n=1:2
+            ppobj{m,n} = [pobj(m,n) 1];
+            <span class="keyword">for</span> i=2:inercje
+                ppobj{m,n} = conv([0.00000001 1], ppobj{m,n}); <span class="comment">%(pobj(m,n)*s+1)^n</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">%     input 1            input 2</span>
+    Gs = [tf( 1,ppobj{1,1}), tf( 5,ppobj{1,2});  <span class="comment">% output 1</span>
+          tf( 1,ppobj{2,1}), tf( 2,ppobj{2,2})]; <span class="comment">% output 2</span>
+    Tp = 0.005;
+    Gz = c2d(Gs,Tp,<span class="string">'zoh'</span>);
+
+    <span class="comment">% Y1/U1=G(1,1) and Y1/U2=G(1,2) =&gt; Y1 = G(1,1)*U1 + G(1,2)*U2</span>
+    <span class="keyword">for</span> m=1:2
+        tmpa = conv(Gz.Denominator{m,1},Gz.Denominator{m,2});
+        a(m,:) = tmpa(2:end);
+
+        tmpb = conv(Gz.Numerator{m,1},Gz.Denominator{m,2});
+        b(m,1,:) = tmpb;
+
+        tmpb = conv(Gz.Numerator{m,2},Gz.Denominator{m,1});
+        b(m,2,:) = tmpb;
+    <span class="keyword">end</span>
+    na = size(a,2);
+    nb = size(b,3);
+<span class="keyword">else</span>
+    na = 10;
+    nb = 30;
+    <span class="keyword">for</span> m=1:ny
+        a(m,:)   = rand(1,na);
+        <span class="keyword">for</span> n=1:nu
+            <span class="keyword">if</span>(m==n)
+                b(m,n,:) = rand(1,1,nb);
+            <span class="keyword">else</span>
+                b(m,n,:) = rand(1,1,nb)*0.1;
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
     <span class="keyword">end</span>
 <span class="keyword">end</span>
 
-<span class="comment">% Y1/U1=G(1,1) and Y1/U2=G(1,2) =&gt; Y1 = G(1,1)*U1 + G(1,2)*U2</span>
-<span class="keyword">for</span> m=1:2
-    a(m,:)   = [A(m,1)+A(m,2), A(m,1)*A(m,2)];
-    b(m,1,:) = [0, B(m,1), A(m,2)*B(m,1)];
-    b(m,2,:) = [0, B(m,2), A(m,1)*B(m,2)];
-<span class="keyword">end</span>
-na = size(a,2);
-nb = size(b,3);
-
+<span class="comment">% Ograniczenia</span>
 umax =  1;
 umin = -1;
-
-<span class="comment">% Horyzonty predykcji i sterowania</span>
-N  = 50;
-Nu = 20;
-
-<span class="comment">% Warto&#347;ci trajektorii zadanej</span>
-yzad(1:ny,1:2000) =  .0;
-yzad(1,   1: end) = -.8; yzad(2, 200: end) = -.1;
-yzad(1, 400: end) = -.1; yzad(2, 600: end) = -.2;
-yzad(1, 800: end) = -.3; yzad(2,1000: end) =  .1;
-yzad(1,1200: end) =  .0; yzad(2,1400: end) =  .0;
-yzad(1,1600: end) = -.2; yzad(2,1800: end) =  .2;
+</pre><h2 id="3">Og&oacute;lne parametry algorytmu</h2><p>Horyzonty predykcji i sterowania</p><pre class="codeinput">N  = 50;
+Nu = 50;
 
 <span class="comment">% Pocz&#261;tkowa i ko&#324;cowa chwila symulacji</span>
 kp = max(na,nb)+1+1;
-kk = size(yzad,2);
+kk = 2000;
+dk = 200;
 
-<span class="comment">% Macierze Lambda oraz Psi -- wagi funkcji koszt&oacute;w (sta&#322;e na horyzoncie</span>
-<span class="comment">% predykcji/sterowania i r&oacute;wne dla ka&#380;dego wyj&#347;cia/wej&#347;cia)</span>
-Lambda = eye(Nu*nu);
-Psi    = eye(N *ny);
+<span class="comment">% Warto&#347;ci trajektorii zadanej</span>
+yzad = zeros(ny,kk);
+<span class="comment">% yzad(1,200:end) = .1;</span>
+<span class="comment">% yzad(2,500:end) = .2;</span>
+<span class="keyword">for</span> k=dk:dk:kk
+    <span class="keyword">for</span> m=1:ny
+        yzad(m,(k-(m-1)*dk/ny):end) = (rand()*2-1)*0.1;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="comment">% Macierze Lambda oraz Psi -- wagi funkcji koszt&oacute;w</span>
+Lambda = eye(Nu*nu)*1.0;
+Psi    = eye(N *ny)*1.0;
 
 <span class="comment">% Wektory warto&#347;ci sterowania oraz wyj&#347;cia obiektu regulacji</span>
 u = zeros(nu,kk);
 y = zeros(ny,kk);
-
-<span class="comment">% W&#322;asnor&#281;cznie wyznaczana odpowied&#378; skokowa</span>
-S = zeros(ny,nu,N);
+</pre><h2 id="4">Macierze wyznaczane offline</h2><p>Odpowied&#378; skokowa</p><pre class="codeinput">S = zeros(ny,nu,N);
 <span class="keyword">for</span> k = 1:size(S,3)
-    <span class="comment">% symulacja obiektu regulacji</span>
     <span class="keyword">for</span> m=1:ny
         <span class="keyword">for</span> n=1:nu
             <span class="keyword">for</span> i=1:min(k,nb)
@@ -160,9 +163,8 @@ S = zeros(ny,nu,N);
     <span class="keyword">end</span>
 <span class="keyword">end</span>
 
+<span class="comment">% Macierz M</span>
 M = cell(N,Nu);
-
-<span class="comment">% Matrix M</span>
 <span class="keyword">for</span> row = 1:N
    <span class="keyword">for</span> col = 1:Nu
         <span class="keyword">if</span>(row-col+1 &gt;= 1)
@@ -174,33 +176,63 @@ M = cell(N,Nu);
 <span class="keyword">end</span>
 M=cell2mat(M);
 
+<span class="comment">% Macierz K</span>
 K = (M'*Psi*M+Lambda)^(-1)*M';
-Knu = K(1:nu,:);
-Kyzad = sum(Knu,2);
-Ku = zeros(ny,nu,nb);
+</pre><h2 id="5">Macierze dla wersji minimalistycznej algorytmu</h2><pre class="codeinput">Kyzad = zeros(nu,ny);
+Ku = zeros(nu,nu,nb);   <span class="comment">% r,n,j -&gt; nu x nu x nb</span>
+Ky = zeros(nu,ny,na+1); <span class="comment">% r,m,j -&gt; nu x ny x (na+1)</span>
+<span class="comment">% r -- numer sygna&#322;u steruj&#261;cego, kt&oacute;rego przyrost jest wyliczany</span>
+<span class="comment">% n -- numer sygna&#322;u steruj&#261;cego</span>
+<span class="comment">% m -- numer sygna&#322;u wyj&#347;ciowego</span>
+<span class="comment">% j -- dynamika sygna&#322;u wej&#347;ciowego/wyj&#347;ciowego</span>
 
-Ky = zeros(ny,nu,na+1);
-<span class="keyword">for</span> m=1:ny
-    <span class="keyword">for</span> i=0
-        <span class="keyword">for</span> p=1:N
-            Ky(:,m,1) = Ky(:,m,1)+K(1:nu,ny*(p-1)+m)*fun_f(p,0,m);
-        <span class="keyword">end</span>
-    <span class="keyword">end</span>
-    <span class="keyword">for</span> i=1:na
-        <span class="keyword">for</span> p=1:N
-            Ky(:,m,i+1) = Ky(:,m,i+1)+K(1:nu,ny*(p-1)+m)*fun_f(p,i,m);
+<span class="comment">% Kolejno&#347;&#263; nie jest przypadkowa!</span>
+fun_f(1,1,1);   <span class="comment">% inicjalizacja parametr&oacute;w f</span>
+fun_g(1,1,1,1); <span class="comment">% inicjalizacja parametr&oacute;w g</span>
+fun_e(1,1,1,1); <span class="comment">% inicjalizacja parametr&oacute;w e</span>
+</pre><h2 id="6">Wyznaczanie parametr&oacute;w Ku, Ky</h2><pre class="codeinput"><span class="keyword">for</span> r=1:nu
+    <span class="keyword">for</span> n=1:nu
+        <span class="keyword">for</span> j=1:nb
+            <span class="keyword">for</span> p=1:N
+                <span class="keyword">for</span> m=1:ny
+                    s=(p-1)*ny+m;
+                    Ku(r,n,j) = Ku(r,n,j) - K(r,s)*fun_e(p,j,m,n);
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
         <span class="keyword">end</span>
     <span class="keyword">end</span>
 <span class="keyword">end</span>
-</pre><pre class="codeoutput error">Undefined function or variable 'N'.
-
-Error in algorithms_testing_gpc2x2&gt;fun_f (line 226)
-    disp(N)
-
-Error in algorithms_testing_gpc2x2 (line 101)
-            Ky(:,m,1) = Ky(:,m,1)+K(1:nu,ny*(p-1)+m)*fun_f(p,0,m);
-</pre><h2 id="3">Symulacja</h2><p>wb = waitbar(0,'Simulation progress...');</p><pre class="codeinput"><span class="keyword">for</span> k = 10:kk
-    <span class="comment">% symulacja obiektu regulacji</span>
+<span class="keyword">for</span> r=1:nu
+    <span class="keyword">for</span> m=1:ny
+        <span class="keyword">for</span> j=0:na
+            <span class="keyword">for</span> p=1:N
+                s=(p-1)*ny+m;
+                Ky(r,m,j+1) = Ky(r,m,j+1) - K(r,s)*fun_f(p,j,m);
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">for</span> r=1:nu
+    <span class="keyword">for</span> m=1:ny
+        <span class="keyword">for</span> p=1:N
+            s=(p-1)*ny+m;
+            Kyzad(r,m) = Kyzad(r,m) + K(r,s);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2 id="7">Generacja macierzy</h2><pre class="codeinput">gpc2x2_matlab_to_C
+</pre><pre class="codeoutput">#define na 4
+#define nb 5
+#define nu 2
+#define ny 2
+const float b[ny][nu][nb] = {{{+0.000000e+00,+7.117393e-03,-6.999739e-03,-1.394960e-08,-1.548716e-24},{+0.000000e+00,+8.264257e-02,-8.205420e-02,-1.627453e-07,+0.000000e+00}},{{+0.000000e+00,+9.950146e-03,-9.826524e-03,-1.955503e-08,+2.171044e-24},{+0.000000e+00,+2.484435e-02,-2.459709e-02,-4.888756e-08,-5.427610e-24}}};
+const float a[ny][na] = {{-1.976354e+00,+9.764717e-01,+1.084101e-16,+0.000000e+00},{-1.977628e+00,+9.777512e-01,+2.465190e-32,-1.205171e-32}};
+float Kyzad[nu][ny] = {{-1.993046e-01,+9.102806e-01},{+8.050209e-01,+1.497493e-01}};
+float Ky[nu][ny][na+1] = {{{+4.950616e+01,-9.410558e+01,+4.479872e+01,+4.973657e-15,+0.000000e+00},{-1.637016e+02,+3.098456e+02,-1.470543e+02,-3.860617e-30,+1.812585e-30}},{{-2.584925e+01,+4.502884e+01,-1.998461e+01,-2.218737e-15,+0.000000e+00},{+1.176425e+01,-2.356530e+01,+1.165130e+01,+2.937508e-31,-1.436133e-31}}};
+float Ku[nu][nu][nb] = {{{-1.132918e-01,+1.270073e+00,-1.156779e+00,-2.301105e-06,+3.975785e-22},{-3.380229e-02,-3.127681e-02,+6.507898e-02,+1.137373e-07,-8.163155e-22}},{{-3.377919e-02,+5.993982e-02,-2.616058e-02,-5.246848e-08,-5.756732e-23},{-3.940225e-01,+1.780248e+00,-1.386223e+00,-2.748203e-06,+6.467769e-23}}};
+</pre><h2 id="8">Symulacja</h2><pre class="codeinput">dudiff = zeros(nu,kk);
+<span class="keyword">for</span> k = kp:kk
+</pre><pre class="codeinput">    <span class="comment">% symulacja obiektu regulacji</span>
     <span class="keyword">for</span> m=1:ny
         <span class="keyword">for</span> n=1:nu
             <span class="keyword">for</span> i=1:nb
@@ -214,30 +246,32 @@ Error in algorithms_testing_gpc2x2 (line 101)
                 y(m,k) = y(m,k) - a(m,i)*y(m,k-i);
             <span class="keyword">end</span>
         <span class="keyword">end</span>
-        <span class="comment">%y(m,k) = y(m,k) + (rand()-.5)/500;</span>
     <span class="keyword">end</span>
 
-    <span class="comment">% Wyznaczanie ymod</span>
-    ymod = zeros(ny,1);
+    <span class="comment">% wprowadzanie zak&#322;&oacute;ce&#324;</span>
+    <span class="keyword">for</span> m=1:ny; y(m,k) = y(m,k) + (rand()-.5)/500; <span class="keyword">end</span>
+
+    <span class="comment">% wyznaczanie wyj&#347;cia modelu</span>
+    ym = zeros(ny,1);
     <span class="keyword">for</span> m=1:ny
         <span class="keyword">for</span> n=1:nu
             <span class="keyword">for</span> i=1:nb
                 <span class="keyword">if</span>(k-i&gt;=1)
-                    ymod(m) = ymod(m) + b(m,n,i)*u(n,k-i);
+                    ym(m) = ym(m) + b(m,n,i)*u(n,k-i);
                 <span class="keyword">end</span>
             <span class="keyword">end</span>
         <span class="keyword">end</span>
         <span class="keyword">for</span> i=1:na
             <span class="keyword">if</span>(k-i&gt;=1)
-                ymod(m) = ymod(m) - a(m,i)*y(m,k-i);
+                ym(m) = ym(m) - a(m,i)*y(m,k-i);
             <span class="keyword">end</span>
         <span class="keyword">end</span>
     <span class="keyword">end</span>
 
-    <span class="comment">% Wyznaczanie d</span>
-    d = y(:,k)-ymod;
+    <span class="comment">% wyznaczanie d</span>
+    d = y(:,k)-ym;
 
-    <span class="comment">% Wyznaczanie Y0</span>
+    <span class="comment">% wyznaczanie Y0</span>
     Y0=zeros(ny,N);
     <span class="keyword">for</span> m=1:ny
         <span class="keyword">for</span> p=1:N
@@ -246,181 +280,273 @@ Error in algorithms_testing_gpc2x2 (line 101)
                 <span class="keyword">for</span> i=1:nb
                     <span class="keyword">if</span>(-i+p&lt;=-1)
                         Y0(m,p) = Y0(m,p) + b(m,n,i)*u(n,k-i+p);
-<span class="comment">%                         fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-i+p,b(m,n,i),u(n,k-i+p));</span>
                     <span class="keyword">else</span>
                         Y0(m,p) = Y0(m,p) + b(m,n,i)*u(n,k-1);
-<span class="comment">%                         fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-1,b(m,n,i),u(n,k-1));</span>
                     <span class="keyword">end</span>
                 <span class="keyword">end</span>
             <span class="keyword">end</span>
             <span class="keyword">for</span> i=1:na
                 <span class="keyword">if</span>(-i+p&lt;=0)
                     Y0(m,p) = Y0(m,p) - a(m,i)*y(m,k-i+p);
-<span class="comment">%                     fprintf('Y0(%d,%d) -= a(%d,%d)*y(%d,%d) = %f*%f;\n',m,p,m,i,m,k-i+p,a(m,i),y(m,k-i+p));</span>
                 <span class="keyword">else</span>
                     Y0(m,p) = Y0(m,p) - a(m,i)*Y0(m,-i+p);
-<span class="comment">%                     fprintf('Y0(%d,%d) -= a(%d,%d)*Y0(%d,%d) = %f*%f;\n',m,p,m,i,m,-i+p,a(m,i),Y0(m,-i+p));</span>
                 <span class="keyword">end</span>
             <span class="keyword">end</span>
         <span class="keyword">end</span>
     <span class="keyword">end</span>
-
     Y0 = reshape(Y0,[],1);
 
-    Yzad = repmat(eye(ny),N,1)*yzad(:,k); <span class="comment">% Yzad sta&#322;e na horyzoncie predykcji</span>
-<span class="comment">%     Yzad = reshape(yzad(:,min(k+(1:N),kk)),[],1); % Yzad zmienne na horyzoncie predykcji</span>
+    <span class="comment">% wyznaczanie Yzad (sta&#322;e na horyzoncie predykcji)</span>
+    Yzad = repmat(eye(ny),N,1)*yzad(:,k);
+</pre><h2 id="10">wyznaczenie du (p&oacute;&#322;optymalnie)</h2><pre class="codeinput">    du_po = K(1:nu,:)*(Yzad-Y0);
+</pre><h2 id="11">wyznaczenie du (optymalnie)</h2><pre class="codeinput">    du = zeros(nu,1);
+    <span class="keyword">for</span> r=1:nu
+        <span class="keyword">for</span> m=1:ny
+            du(r) = du(r) + Kyzad(r,m)*yzad(m,k);
+        <span class="keyword">end</span>
+        <span class="keyword">for</span> n=1:nu
+            <span class="keyword">for</span> j=1:nb
+                du(r) = du(r) + Ku(r,n,j)*u(n,k-j);
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        <span class="keyword">for</span> m=1:ny
+            <span class="keyword">for</span> j=0:na
+                du(r) = du(r) + Ky(r,m,j+1)*y(m,k-j);
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
 
-
-    du = Knu*(Yzad-Y0);
+    du_diff(1:nu,k) = du-du_po;
 
     u(:,k) = u(:,k-1)+du;
+
     <span class="keyword">for</span> n=1:nu
         <span class="keyword">if</span>(u(n,k)&gt;umax); u(n,k) = umax; <span class="keyword">end</span>
         <span class="keyword">if</span>(u(n,k)&lt;umin); u(n,k) = umin; <span class="keyword">end</span>
     <span class="keyword">end</span>
-<span class="comment">%     waitbar(k/kk,wb);</span>
+</pre><pre class="codeinput"><span class="keyword">end</span>
+</pre><h2 id="13">Rysownie przebieg&oacute;w trajektorii wyj&#347;cia, zadanej oraz sterowania</h2><pre class="codeinput">figure;
+<span class="keyword">for</span> m=1:ny
+    <span class="keyword">for</span> n=1:nu
+        subplot(ny,nu,((m-1)*nu+n));
+        plot(Tp*((1:size(S,3))-1),squeeze(S(m,n,:)));
+        xlim([0,4]);
+        <span class="keyword">if</span>(m==1)
+            ylim([0,5]);
+        <span class="keyword">else</span>
+            ylim([0,2]);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
 <span class="keyword">end</span>
-<span class="comment">% close(wb)</span>
-</pre><h2 id="4">Rysownie przebieg&oacute;w trajektorii wyj&#347;cia, zadanej oraz sterowania</h2><pre class="codeinput">figure;
+
+figure;
 plot(y'); hold <span class="string">on</span>;
 stairs(yzad',<span class="string">'k--'</span>); hold <span class="string">off</span>;
+title(<span class="string">'Warto&#347;ci wyj&#347;ciowe i zadane w czasie'</span>);
 
 figure;
 stairs(u');
-</pre><h2 id="5">Funkcje do wyznaczania minimalnej postaci algorytmu GPC</h2><pre class="codeinput"><span class="keyword">function</span> out = fun_e(p,j)
-    <span class="comment">% warto&#347;ci N, a, b, na, nb musz&#261; ju&#380; by&#263; w workspace'ie</span>
-    <span class="keyword">global</span> N a b na nb nu ny
-    <span class="keyword">if</span>(j==1 &amp;&amp; nb==1)
-        out = 0;
-    <span class="keyword">elseif</span>(j==1 &amp;&amp; nb&gt;1)
-        out = fun_g(p,j);
-    <span class="keyword">elseif</span>(j&gt;=2 &amp;&amp; j&lt;=(nb-1) &amp;&amp; j&lt;nb &amp;&amp; nb&gt;1)
-        out = fun_g(p,j) - fun_g(p,j-1);
-    <span class="keyword">elseif</span>(j==nb &amp;&amp; nb&gt;1)
-        out = -fun_g(p,j-1);
+title(<span class="string">'Warto&#347;ci sterowania w czasie'</span>);
+
+<span class="comment">% figure;</span>
+<span class="comment">% stairs(du_diff');</span>
+<span class="comment">% title('Warto&#347;ci b&#322;&#281;du w czasie');</span>
+</pre><img vspace="5" hspace="5" src="algorithms_testing_gpc2x2_01.png" alt=""> <img vspace="5" hspace="5" src="algorithms_testing_gpc2x2_02.png" alt=""> <img vspace="5" hspace="5" src="algorithms_testing_gpc2x2_03.png" alt=""> <h2 id="14">Funkcje do wyznaczania minimalnej postaci algorytmu GPC</h2><pre class="codeinput"><span class="keyword">function</span> out = fun_e(p,j,m,n)
+    <span class="comment">% warto&#347;ci N, a, b, na, nb, nu, ny musz&#261; ju&#380; by&#263; w workspace'ie</span>
+    <span class="keyword">global</span> N a b na nb nu ny E
+
+    o = 0;
+    <span class="keyword">if</span>(isempty(E))
+        E=cell(ny,nu,N,nb+o);
+        <span class="keyword">for</span> m=1:ny; <span class="keyword">for</span> n=1:nu; <span class="keyword">for</span> p=1:N; <span class="keyword">for</span> j=(1-o):nb; fun_e(p,j,m,n); <span class="keyword">end</span>; <span class="keyword">end</span>; <span class="keyword">end</span>; <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">if</span>(~isempty(E{m,n,p,j+o}))
+        out = E{m,n,p,j+o};
     <span class="keyword">else</span>
-        error(<span class="string">'Co&#347; posz&#322;o nie tak! Parametry wywo&#322;ania:\np=%d; j=%d; nb=%d;\n'</span>,p,j,nb);
+        <span class="keyword">if</span>(j==1 &amp;&amp; nb==1)
+            out = 0;
+        <span class="keyword">elseif</span>(j==1 &amp;&amp; nb&gt;1)
+            out = fun_g(p,j,m,n);
+        <span class="keyword">elseif</span>(j&gt;=2 &amp;&amp; j&lt;=(nb-1) &amp;&amp; j&lt;nb &amp;&amp; nb&gt;1)
+            out = fun_g(p,j,m,n) - fun_g(p,j-1,m,n);
+        <span class="keyword">elseif</span>(j==nb &amp;&amp; nb&gt;1)
+            out = -fun_g(p,j-1,m,n);
+        <span class="keyword">else</span>
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);
+            disp(p);disp(j);disp(m);disp(n);
+            <span class="comment">%disp(E);disp(o);</span>
+            error(<span class="string">'Error!'</span>);
+        <span class="keyword">end</span>
+        E{m,n,p,j+o} = out;
     <span class="keyword">end</span>
 <span class="keyword">end</span>
 
 <span class="keyword">function</span> out = fun_f(p,j,m)
-    <span class="comment">% warto&#347;ci N, a, b, na, nb musz&#261; ju&#380; by&#263; w workspace'ie</span>
-    disp(N)
-    <span class="keyword">global</span> N a b na nb
-    disp(N)
-    <span class="keyword">if</span>(p == 1)
-        <span class="keyword">if</span>(j==0)
-            out = 1 - a(m,1);
-        <span class="keyword">elseif</span>(j&gt;=1 &amp;&amp; j&lt;=(na-1))
-            out = a(m,j)-a(m,j+1);
-        <span class="keyword">elseif</span>(j==na)
-            out = a(m,j);
-        <span class="keyword">else</span>
-            error(<span class="string">'Co&#347; posz&#322;o nie tak1! Parametry wywo&#322;ania:\np=%d; j=%d; na=%d;\n'</span>,p,j,na);
-        <span class="keyword">end</span>
-    <span class="keyword">elseif</span>(p&gt;=2 &amp;&amp; p&lt;=N)
-        <span class="keyword">if</span>(j&gt;=0 &amp;&amp; j&lt;=(na-1))
-            out = fun_f(p-1,0,m)*fun_f(1,j,m)+fun_f(p-1,j+1,m);
-        <span class="keyword">elseif</span>(j==na)
-            out = fun_f(p-1,0,m)*fun_f(1,j,m);
-        <span class="keyword">else</span>
-            error(<span class="string">'Co&#347; posz&#322;o nie tak2! Parametry wywo&#322;ania:\np=%d; j=%d; na=%d;\n'</span>,p,j,na);
-        <span class="keyword">end</span>
+    <span class="comment">% warto&#347;ci N, a, b, na, nb, nu, ny musz&#261; ju&#380; by&#263; w workspace'ie</span>
+    <span class="keyword">global</span> N a b na nb nu ny F
+
+    o = 1;
+    <span class="keyword">if</span>(isempty(F))
+        F=cell(ny,N,na+o);
+        <span class="keyword">for</span> m=1:ny; <span class="keyword">for</span> p=1:N; <span class="keyword">for</span> j=(1-o):na; fun_f(p,j,m); <span class="keyword">end</span>; <span class="keyword">end</span>; <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">if</span>(~isempty(F{m,p,j+o}))
+        out = F{m,p,j+o};
     <span class="keyword">else</span>
-        error(<span class="string">'Co&#347; posz&#322;o nie tak3! Parametry wywo&#322;ania:\np=%d; j=%d; N=%d;\n'</span>,p,j,N);
+        <span class="keyword">if</span>(p == 1)
+            <span class="keyword">if</span>(j==0)
+                out = 1 - a(m,1);
+            <span class="keyword">elseif</span>(j&gt;=1 &amp;&amp; j&lt;=(na-1))
+                out = a(m,j)-a(m,j+1);
+            <span class="keyword">elseif</span>(j==na)
+                out = a(m,j);
+            <span class="keyword">else</span>
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error(<span class="string">'Error!'</span>);
+            <span class="keyword">end</span>
+        <span class="keyword">elseif</span>(p&gt;=2 &amp;&amp; p&lt;=N)
+            <span class="keyword">if</span>(j&gt;=0 &amp;&amp; j&lt;=(na-1))
+                out = fun_f(p-1,0,m)*fun_f(1,j,m)+fun_f(p-1,j+1,m);
+            <span class="keyword">elseif</span>(j==na)
+                out = fun_f(p-1,0,m)*fun_f(1,j,m);
+            <span class="keyword">else</span>
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error(<span class="string">'Error!'</span>);
+            <span class="keyword">end</span>
+        <span class="keyword">else</span>
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error(<span class="string">'Error!'</span>);
+        <span class="keyword">end</span>
+        F{m,p,j+o} = out;
     <span class="keyword">end</span>
 <span class="keyword">end</span>
 
-<span class="keyword">function</span> out = fun_g(p,j)
-    <span class="comment">% warto&#347;ci N, a, b, na, nb musz&#261; ju&#380; by&#263; w workspace'ie</span>
-    <span class="keyword">global</span> N a b na nb nu ny
-    <span class="keyword">if</span>(p == 1)
-        <span class="keyword">if</span>(j&gt;=0 &amp;&amp; j&lt;=(nb-1))
-            out = b(j+1);
-        <span class="keyword">else</span>
-            error(<span class="string">'Co&#347; posz&#322;o nie tak1! Parametry wywo&#322;ania:\np=%d; j=%d; nb=%d;\n'</span>,p,j,nb);
-        <span class="keyword">end</span>
-    <span class="keyword">elseif</span>(p&gt;=2 &amp;&amp; p&lt;=N)
-        <span class="keyword">if</span>(j&gt;=(1-p) &amp;&amp; j&lt;=(-1))
-            out = fun_g(p-1,j+1);
-        <span class="keyword">elseif</span>(j&gt;=0 &amp;&amp; j&lt;=(nb-2))
-            out = fun_f(p-1,0)*fun_g(1,j)+fun_g(p-1,j+1);
-        <span class="keyword">elseif</span>(j==(nb-1))
-            out = fun_f(p-1,0)*fun_g(1,j);
-        <span class="keyword">else</span>
-            error(<span class="string">'Co&#347; posz&#322;o nie tak2! Parametry wywo&#322;ania:\np=%d; j=%d; nb=%d;\n'</span>,p,j,nb);
-        <span class="keyword">end</span>
+<span class="keyword">function</span> out = fun_g(p,j,m,n)
+    <span class="comment">% warto&#347;ci N, a, b, na, nb, nu, ny musz&#261; ju&#380; by&#263; w workspace'ie</span>
+    <span class="keyword">global</span> N a b na nb nu ny G
+
+    o = N;
+    <span class="keyword">if</span>(isempty(G))
+        G=cell(ny,nu,N,nb-1+o);
+        <span class="keyword">for</span> m=1:ny; <span class="keyword">for</span> n=1:nu; <span class="keyword">for</span> p=1:N; <span class="keyword">for</span> j=(1-p):(nb-1); fun_g(p,j,m,n); <span class="keyword">end</span>; <span class="keyword">end</span>; <span class="keyword">end</span>; <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">if</span>(~isempty(G{m,n,p,j+o}))
+        out = G{m,n,p,j+o};
     <span class="keyword">else</span>
-        error(<span class="string">'Co&#347; posz&#322;o nie tak3! Parametry wywo&#322;ania:\np=%d; j=%d; nb=%d;\n'</span>,p,j,nb);
+        <span class="keyword">if</span>(p == 1)
+            <span class="keyword">if</span>(j&gt;=0 &amp;&amp; j&lt;=(nb-1))
+                out = b(m,n,j+1);
+            <span class="keyword">else</span>
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error(<span class="string">'Error!'</span>);
+            <span class="keyword">end</span>
+        <span class="keyword">elseif</span>(p&gt;=2 &amp;&amp; p&lt;=N)
+            <span class="keyword">if</span>(j&gt;=(1-p) &amp;&amp; j&lt;=(-1))
+                out = fun_g(p-1,j+1,m,n);
+            <span class="keyword">elseif</span>(j&gt;=0 &amp;&amp; j&lt;=(nb-2))
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n)+fun_g(p-1,j+1,m,n);
+            <span class="keyword">elseif</span>(j==(nb-1))
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n);
+            <span class="keyword">else</span>
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error(<span class="string">'Error!'</span>);
+            <span class="keyword">end</span>
+        <span class="keyword">else</span>
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error(<span class="string">'Error!'</span>);
+        <span class="keyword">end</span>
+        G{m,n,p,j+o} = out;
     <span class="keyword">end</span>
 <span class="keyword">end</span>
 </pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
+%% Algorytm DMC 2x2 (benchmark)
+clear all
 global N a b na nb nu ny
-clear all;
-clearvars
 close all
 
-%% Algorytm DMC 2x2 (benchmark)
-% Obiekt regulacji
-%      input 1        input 2
-Gs = [tf( 1,[.7 1]), tf( 5,[.3 1]);  % output 1
-      tf( 1,[.5 1]), tf( 2,[.4 1])]; % output 2
-Tp = 0.005;
-Gz = c2d(Gs,Tp,'zoh');
+obiekt_losowy = 0;
 ny = 2;
 nu = 2;
+%% Obiekt regulacji
+if(obiekt_losowy == 0)
+    inercje = 2;
 
-% Based on STP script, pages 79 (tab. 3.1) and 86 (eq. 3.49)
-for m=1:2
-    for n=1:2
-        alfa = exp(-1/Gs(m,n).Denominator{1}(1)*Tp);
-        B(m,n) = Gs(m,n).Numerator{1}(2)*(1-alfa);
-        A(m,n) =                           -alfa ;
+    pobj = [.7, .3; .5, .4];
+    ppobj = cell(2,2);
+    for m=1:2
+        for n=1:2
+            ppobj{m,n} = [pobj(m,n) 1];
+            for i=2:inercje
+                ppobj{m,n} = conv([0.00000001 1], ppobj{m,n}); %(pobj(m,n)*s+1)^n
+            end
+        end
+    end
+
+    %     input 1            input 2
+    Gs = [tf( 1,ppobj{1,1}), tf( 5,ppobj{1,2});  % output 1
+          tf( 1,ppobj{2,1}), tf( 2,ppobj{2,2})]; % output 2
+    Tp = 0.005;
+    Gz = c2d(Gs,Tp,'zoh');
+
+    % Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
+    for m=1:2
+        tmpa = conv(Gz.Denominator{m,1},Gz.Denominator{m,2});
+        a(m,:) = tmpa(2:end);
+    
+        tmpb = conv(Gz.Numerator{m,1},Gz.Denominator{m,2});
+        b(m,1,:) = tmpb;
+    
+        tmpb = conv(Gz.Numerator{m,2},Gz.Denominator{m,1});
+        b(m,2,:) = tmpb;
+    end
+    na = size(a,2);
+    nb = size(b,3);
+else
+    na = 10;
+    nb = 30; 
+    for m=1:ny
+        a(m,:)   = rand(1,na);
+        for n=1:nu
+            if(m==n)
+                b(m,n,:) = rand(1,1,nb);
+            else
+                b(m,n,:) = rand(1,1,nb)*0.1;
+            end
+        end
     end
 end
 
-% Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
-for m=1:2
-    a(m,:)   = [A(m,1)+A(m,2), A(m,1)*A(m,2)];
-    b(m,1,:) = [0, B(m,1), A(m,2)*B(m,1)];
-    b(m,2,:) = [0, B(m,2), A(m,1)*B(m,2)];
-end
-na = size(a,2);
-nb = size(b,3);
-
+% Ograniczenia
 umax =  1;
 umin = -1;
 
+%% Ogólne parametry algorytmu
 % Horyzonty predykcji i sterowania
 N  = 50; 
-Nu = 20;
-
-% Wartości trajektorii zadanej
-yzad(1:ny,1:2000) =  .0;
-yzad(1,   1: end) = -.8; yzad(2, 200: end) = -.1;
-yzad(1, 400: end) = -.1; yzad(2, 600: end) = -.2;
-yzad(1, 800: end) = -.3; yzad(2,1000: end) =  .1;
-yzad(1,1200: end) =  .0; yzad(2,1400: end) =  .0;
-yzad(1,1600: end) = -.2; yzad(2,1800: end) =  .2;
+Nu = 50;
 
 % Początkowa i końcowa chwila symulacji
 kp = max(na,nb)+1+1;
-kk = size(yzad,2);
+kk = 2000;
+dk = 200;
 
-% Macierze Lambda oraz Psi REPLACE_WITH_DASH_DASH wagi funkcji kosztów (stałe na horyzoncie
-% predykcji/sterowania i równe dla każdego wyjścia/wejścia)
-Lambda = eye(Nu*nu);
-Psi    = eye(N *ny);
+% Wartości trajektorii zadanej
+yzad = zeros(ny,kk);
+% yzad(1,200:end) = .1;
+% yzad(2,500:end) = .2;
+for k=dk:dk:kk
+    for m=1:ny
+        yzad(m,(k-(m-1)*dk/ny):end) = (rand()*2-1)*0.1;
+    end
+end
+
+% Macierze Lambda oraz Psi REPLACE_WITH_DASH_DASH wagi funkcji kosztów
+Lambda = eye(Nu*nu)*1.0;
+Psi    = eye(N *ny)*1.0;
 
 % Wektory wartości sterowania oraz wyjścia obiektu regulacji
 u = zeros(nu,kk);
 y = zeros(ny,kk);
 
-% Własnoręcznie wyznaczana odpowiedź skokowa
+%% Macierze wyznaczane offline
+% Odpowiedź skokowa
 S = zeros(ny,nu,N);
 for k = 1:size(S,3)
-    % symulacja obiektu regulacji
     for m=1:ny
         for n=1:nu
             for i=1:min(k,nb)
@@ -433,9 +559,8 @@ for k = 1:size(S,3)
     end 
 end
 
+% Macierz M
 M = cell(N,Nu);
-
-% Matrix M
 for row = 1:N
    for col = 1:Nu
         if(row-col+1 >= 1)
@@ -447,28 +572,61 @@ for row = 1:N
 end
 M=cell2mat(M);
 
+% Macierz K
 K = (M'*Psi*M+Lambda)^(-1)*M';
-Knu = K(1:nu,:);
-Kyzad = sum(Knu,2);
-Ku = zeros(ny,nu,nb);
 
-Ky = zeros(ny,nu,na+1);
-for m=1:ny
-    for i=0
-        for p=1:N
-            Ky(:,m,1) = Ky(:,m,1)+K(1:nu,ny*(p-1)+m)*fun_f(p,0,m);
-        end
-    end
-    for i=1:na
-        for p=1:N
-            Ky(:,m,i+1) = Ky(:,m,i+1)+K(1:nu,ny*(p-1)+m)*fun_f(p,i,m);
+%% Macierze dla wersji minimalistycznej algorytmu
+Kyzad = zeros(nu,ny);
+Ku = zeros(nu,nu,nb);   % r,n,j -> nu x nu x nb
+Ky = zeros(nu,ny,na+1); % r,m,j -> nu x ny x (na+1)
+% r REPLACE_WITH_DASH_DASH numer sygnału sterującego, którego przyrost jest wyliczany
+% n REPLACE_WITH_DASH_DASH numer sygnału sterującego
+% m REPLACE_WITH_DASH_DASH numer sygnału wyjściowego
+% j REPLACE_WITH_DASH_DASH dynamika sygnału wejściowego/wyjściowego
+
+% Kolejność nie jest przypadkowa!
+fun_f(1,1,1);   % inicjalizacja parametrów f
+fun_g(1,1,1,1); % inicjalizacja parametrów g
+fun_e(1,1,1,1); % inicjalizacja parametrów e
+
+%% Wyznaczanie parametrów Ku, Ky
+for r=1:nu
+    for n=1:nu
+        for j=1:nb
+            for p=1:N
+                for m=1:ny
+                    s=(p-1)*ny+m;
+                    Ku(r,n,j) = Ku(r,n,j) - K(r,s)*fun_e(p,j,m,n);
+                end
+            end
         end
     end
 end
-    
+for r=1:nu
+    for m=1:ny
+        for j=0:na
+            for p=1:N
+                s=(p-1)*ny+m;
+                Ky(r,m,j+1) = Ky(r,m,j+1) - K(r,s)*fun_f(p,j,m);
+            end
+        end
+    end
+end
+for r=1:nu
+    for m=1:ny
+        for p=1:N
+            s=(p-1)*ny+m;
+            Kyzad(r,m) = Kyzad(r,m) + K(r,s);
+        end
+    end
+end
+
+%% Generacja macierzy
+gpc2x2_matlab_to_C
+
 %% Symulacja
-% wb = waitbar(0,'Simulation progress...');
-for k = 10:kk
+dudiff = zeros(nu,kk);
+for k = kp:kk
     % symulacja obiektu regulacji
     for m=1:ny
         for n=1:nu
@@ -483,30 +641,32 @@ for k = 10:kk
                 y(m,k) = y(m,k) - a(m,i)*y(m,k-i);
             end
         end         
-        %y(m,k) = y(m,k) + (rand()-.5)/500;
     end 
     
-    % Wyznaczanie ymod
-    ymod = zeros(ny,1);
+    % wprowadzanie zakłóceń
+    for m=1:ny; y(m,k) = y(m,k) + (rand()-.5)/500; end
+     
+    % wyznaczanie wyjścia modelu
+    ym = zeros(ny,1);
     for m=1:ny
         for n=1:nu
             for i=1:nb
                 if(k-i>=1)
-                    ymod(m) = ymod(m) + b(m,n,i)*u(n,k-i);
+                    ym(m) = ym(m) + b(m,n,i)*u(n,k-i);
                 end
             end
         end
         for i=1:na
             if(k-i>=1)
-                ymod(m) = ymod(m) - a(m,i)*y(m,k-i);
+                ym(m) = ym(m) - a(m,i)*y(m,k-i);
             end
         end            
     end 
     
-    % Wyznaczanie d
-    d = y(:,k)-ymod;
+    % wyznaczanie d
+    d = y(:,k)-ym;
     
-    % Wyznaczanie Y0
+    % wyznaczanie Y0
     Y0=zeros(ny,N);
     for m=1:ny
         for p=1:N
@@ -515,119 +675,184 @@ for k = 10:kk
                 for i=1:nb
                     if(-i+p<=-1)
                         Y0(m,p) = Y0(m,p) + b(m,n,i)*u(n,k-i+p);
-%                         fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-i+p,b(m,n,i),u(n,k-i+p));
                     else
                         Y0(m,p) = Y0(m,p) + b(m,n,i)*u(n,k-1);
-%                         fprintf('Y0(%d,%d) += b(%d,%d,%d)*u(%d,%d) = %f*%f;\n',m,p,m,n,i,n,k-1,b(m,n,i),u(n,k-1));
                     end
                 end
             end
             for i=1:na
                 if(-i+p<=0)
                     Y0(m,p) = Y0(m,p) - a(m,i)*y(m,k-i+p);
-%                     fprintf('Y0(%d,%d) -= a(%d,%d)*y(%d,%d) = %f*%f;\n',m,p,m,i,m,k-i+p,a(m,i),y(m,k-i+p));
                 else
                     Y0(m,p) = Y0(m,p) - a(m,i)*Y0(m,-i+p);
-%                     fprintf('Y0(%d,%d) -= a(%d,%d)*Y0(%d,%d) = %f*%f;\n',m,p,m,i,m,-i+p,a(m,i),Y0(m,-i+p));
                 end
             end            
         end
     end
-    
     Y0 = reshape(Y0,[],1);
     
-    Yzad = repmat(eye(ny),N,1)*yzad(:,k); % Yzad stałe na horyzoncie predykcji
-%     Yzad = reshape(yzad(:,min(k+(1:N),kk)),[],1); % Yzad zmienne na horyzoncie predykcji
-  
+    % wyznaczanie Yzad (stałe na horyzoncie predykcji)
+    Yzad = repmat(eye(ny),N,1)*yzad(:,k); 
     
-    du = Knu*(Yzad-Y0);
-   
+    %% wyznaczenie du (półoptymalnie)
+    du_po = K(1:nu,:)*(Yzad-Y0);
+    
+    %% wyznaczenie du (optymalnie)
+    du = zeros(nu,1);
+    for r=1:nu
+        for m=1:ny
+            du(r) = du(r) + Kyzad(r,m)*yzad(m,k);
+        end
+        for n=1:nu
+            for j=1:nb
+                du(r) = du(r) + Ku(r,n,j)*u(n,k-j);
+            end
+        end
+        for m=1:ny
+            for j=0:na
+                du(r) = du(r) + Ky(r,m,j+1)*y(m,k-j);
+            end
+        end
+    end
+    
+    du_diff(1:nu,k) = du-du_po;
+    
     u(:,k) = u(:,k-1)+du;
+    
     for n=1:nu
         if(u(n,k)>umax); u(n,k) = umax; end
         if(u(n,k)<umin); u(n,k) = umin; end
     end
-%     waitbar(k/kk,wb);
 end
-% close(wb)
 
 %% Rysownie przebiegów trajektorii wyjścia, zadanej oraz sterowania
 figure;
+for m=1:ny
+    for n=1:nu
+        subplot(ny,nu,((m-1)*nu+n));
+        plot(Tp*((1:size(S,3))-1),squeeze(S(m,n,:)));
+        xlim([0,4]);
+        if(m==1)
+            ylim([0,5]);
+        else
+            ylim([0,2]);
+        end
+    end
+end
+
+figure;
 plot(y'); hold on;
 stairs(yzad','kREPLACE_WITH_DASH_DASH'); hold off;
+title('Wartości wyjściowe i zadane w czasie');
 
 figure;
 stairs(u');
+title('Wartości sterowania w czasie');
 
-
-
+% figure;
+% stairs(du_diff');
+% title('Wartości błędu w czasie');
 
 %% Funkcje do wyznaczania minimalnej postaci algorytmu GPC
-function out = fun_e(p,j)
-    % wartości N, a, b, na, nb muszą już być w workspace'ie
-    global N a b na nb nu ny 
-    if(j==1 && nb==1)
-        out = 0;
-    elseif(j==1 && nb>1)
-        out = fun_g(p,j);
-    elseif(j>=2 && j<=(nb-1) && j<nb && nb>1)
-        out = fun_g(p,j) - fun_g(p,j-1);
-    elseif(j==nb && nb>1)
-        out = -fun_g(p,j-1);
+function out = fun_e(p,j,m,n)
+    % wartości N, a, b, na, nb, nu, ny muszą już być w workspace'ie
+    global N a b na nb nu ny E
+    
+    o = 0;
+    if(isempty(E))
+        E=cell(ny,nu,N,nb+o);
+        for m=1:ny; for n=1:nu; for p=1:N; for j=(1-o):nb; fun_e(p,j,m,n); end; end; end; end
+    end
+    if(~isempty(E{m,n,p,j+o}))
+        out = E{m,n,p,j+o};
     else
-        error('Coś poszło nie tak! Parametry wywołania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
+        if(j==1 && nb==1)
+            out = 0;
+        elseif(j==1 && nb>1)
+            out = fun_g(p,j,m,n);
+        elseif(j>=2 && j<=(nb-1) && j<nb && nb>1)
+            out = fun_g(p,j,m,n) - fun_g(p,j-1,m,n);
+        elseif(j==nb && nb>1)
+            out = -fun_g(p,j-1,m,n);
+        else
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);
+            disp(p);disp(j);disp(m);disp(n);
+            %disp(E);disp(o);
+            error('Error!');
+        end
+        E{m,n,p,j+o} = out;
     end
 end
 
 function out = fun_f(p,j,m)
-    % wartości N, a, b, na, nb muszą już być w workspace'ie
-    disp(N)
-    global N a b na nb
-    disp(N)
-    if(p == 1)
-        if(j==0)
-            out = 1 - a(m,1);
-        elseif(j>=1 && j<=(na-1))
-            out = a(m,j)-a(m,j+1);
-        elseif(j==na)
-            out = a(m,j);
-        else
-            error('Coś poszło nie tak1! Parametry wywołania:\np=%d; j=%d; na=%d;\n',p,j,na);
-        end
-    elseif(p>=2 && p<=N)
-        if(j>=0 && j<=(na-1))
-            out = fun_f(p-1,0,m)*fun_f(1,j,m)+fun_f(p-1,j+1,m);
-        elseif(j==na)
-            out = fun_f(p-1,0,m)*fun_f(1,j,m);
-        else
-            error('Coś poszło nie tak2! Parametry wywołania:\np=%d; j=%d; na=%d;\n',p,j,na);
-        end
+    % wartości N, a, b, na, nb, nu, ny muszą już być w workspace'ie
+    global N a b na nb nu ny F
+    
+    o = 1;
+    if(isempty(F))
+        F=cell(ny,N,na+o);
+        for m=1:ny; for p=1:N; for j=(1-o):na; fun_f(p,j,m); end; end; end
+    end
+    if(~isempty(F{m,p,j+o}))
+        out = F{m,p,j+o};
     else
-        error('Coś poszło nie tak3! Parametry wywołania:\np=%d; j=%d; N=%d;\n',p,j,N);
+        if(p == 1)
+            if(j==0)
+                out = 1 - a(m,1);
+            elseif(j>=1 && j<=(na-1))
+                out = a(m,j)-a(m,j+1);
+            elseif(j==na)
+                out = a(m,j);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error('Error!');
+            end
+        elseif(p>=2 && p<=N)
+            if(j>=0 && j<=(na-1))
+                out = fun_f(p-1,0,m)*fun_f(1,j,m)+fun_f(p-1,j+1,m);
+            elseif(j==na)
+                out = fun_f(p-1,0,m)*fun_f(1,j,m);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error('Error!');
+            end
+        else
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(F);disp(o);error('Error!');
+        end
+        F{m,p,j+o} = out;
     end
 end
 
-function out = fun_g(p,j)
-    % wartości N, a, b, na, nb muszą już być w workspace'ie
-    global N a b na nb nu ny
-    if(p == 1)
-        if(j>=0 && j<=(nb-1))
-            out = b(j+1);
-        else
-            error('Coś poszło nie tak1! Parametry wywołania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
-        end
-    elseif(p>=2 && p<=N)
-        if(j>=(1-p) && j<=(-1))
-            out = fun_g(p-1,j+1);
-        elseif(j>=0 && j<=(nb-2))
-            out = fun_f(p-1,0)*fun_g(1,j)+fun_g(p-1,j+1);
-        elseif(j==(nb-1))
-            out = fun_f(p-1,0)*fun_g(1,j);
-        else
-            error('Coś poszło nie tak2! Parametry wywołania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
-        end
+function out = fun_g(p,j,m,n)
+    % wartości N, a, b, na, nb, nu, ny muszą już być w workspace'ie
+    global N a b na nb nu ny G
+    
+    o = N;
+    if(isempty(G))
+        G=cell(ny,nu,N,nb-1+o);
+        for m=1:ny; for n=1:nu; for p=1:N; for j=(1-p):(nb-1); fun_g(p,j,m,n); end; end; end; end
+    end
+    if(~isempty(G{m,n,p,j+o}))
+        out = G{m,n,p,j+o};
     else
-        error('Coś poszło nie tak3! Parametry wywołania:\np=%d; j=%d; nb=%d;\n',p,j,nb);
+        if(p == 1)
+            if(j>=0 && j<=(nb-1))
+                out = b(m,n,j+1);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
+            end
+        elseif(p>=2 && p<=N)
+            if(j>=(1-p) && j<=(-1))
+                out = fun_g(p-1,j+1,m,n);
+            elseif(j>=0 && j<=(nb-2))
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n)+fun_g(p-1,j+1,m,n);
+            elseif(j==(nb-1))
+                out = fun_f(p-1,0,m)*fun_g(1,j,m,n);
+            else
+                disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
+            end
+        else
+            disp(N);disp(a);disp(b);disp(na);disp(nb);disp(nu);disp(ny);disp(G);disp(o);error('Error!');
+        end
+        G{m,n,p,j+o} = out;
     end
 end
 ##### SOURCE END #####

@@ -1,35 +1,62 @@
 %% Algorytm DMC 2x2 (benchmark)
-clearvars;
+clear all
+
 close all
 
-% Obiekt regulacji
-%      input 1        input 2
-Gs = [tf( 1,[.7 1]), tf( 5,[.03 1]);  % output 1
-      tf( 1,[.05 1]), tf( 2,[.4 1])]; % output 2
-Tp = 0.05;
-Gz = c2d(Gs,Tp,'zoh');
+mu   =[-0.165315345000003,-0.065108360000001];
+sigma=[ 0.001148139448443, 0.001082560427385];
+
+obiekt_losowy = 0;
 ny = 2;
 nu = 2;
+%% Obiekt regulacji
+if(obiekt_losowy == 0)
+    inercje = 1;
 
-% Based on STP script, pages 79 (tab. 3.1) and 86 (eq. 3.49)
-A = zeros(2,2);
-B = zeros(2,2);
-for m=1:2
-    for n=1:2
-        alfa = exp(-1/Gs(m,n).Denominator{1}(1)*Tp);
-        B(m,n) = Gs(m,n).Numerator{1}(2)*(1-alfa);
-        A(m,n) =                           -alfa ;
+    pobj = [.7, .3; .5, .4];
+    ppobj = cell(2,2);
+    for m=1:2
+        for n=1:2
+            ppobj{m,n} = [pobj(m,n) 1];
+            for i=2:inercje
+                ppobj{m,n} = conv([pobj(m,n) 1], ppobj{m,n}); %(pobj(m,n)*s+1)^n
+            end
+        end
+    end
+
+    %     input 1            input 2
+    Gs = [tf( 1,ppobj{1,1}), tf( 5,ppobj{1,2});  % output 1
+          tf( 1,ppobj{2,1}), tf( 2,ppobj{2,2})]; % output 2
+    Tp = 0.005;
+    Gz = c2d(Gs,Tp,'zoh');
+
+    % Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
+    for m=1:2
+        tmpa = conv(Gz.Denominator{m,1},Gz.Denominator{m,2});
+        a(m,:) = tmpa(2:end);
+    
+        tmpb = conv(Gz.Numerator{m,1},Gz.Denominator{m,2});
+        b(m,1,:) = tmpb;
+    
+        tmpb = conv(Gz.Numerator{m,2},Gz.Denominator{m,1});
+        b(m,2,:) = tmpb;
+    end
+    na = size(a,2);
+    nb = size(b,3);
+else
+    na = 10;
+    nb = 30; 
+    for m=1:ny
+        a(m,:)   = rand(1,na);
+        for n=1:nu
+            if(m==n)
+                b(m,n,:) = rand(1,1,nb);
+            else
+                b(m,n,:) = rand(1,1,nb)*0.1;
+            end
+        end
     end
 end
-
-% Y1/U1=G(1,1) and Y1/U2=G(1,2) => Y1 = G(1,1)*U1 + G(1,2)*U2
-for m=1:2
-    a(m,:)   = [A(m,1)+A(m,2), A(m,1)*A(m,2)];
-    b(m,1,:) = [0, B(m,1), A(m,2)*B(m,1)];
-    b(m,2,:) = [0, B(m,2), A(m,1)*B(m,2)];
-end
-na = size(a,2);
-nb = size(b,3);
 
 % Ograniczenia
 umax =  1;
@@ -44,7 +71,8 @@ S = shiftdim(S(1:end,:,:),1); % usuwanie pierwszego elementu odpowiedzi
                               % zosta³a kolejnoœæ indeksów
                               
 D = size(S,3);
-D = min(D,200); % nadpisujê ¿eby zmniejszyæ liczbê obliczeñ
+D = 200;
+%D = min(D,200); % nadpisujê ¿eby zmniejszyæ liczbê obliczeñ
 
 % % W³asnorêcznie wyznaczana odpowiedŸ skokowa
 % S = zeros(ny,nu,1000);
@@ -64,19 +92,19 @@ D = min(D,200); % nadpisujê ¿eby zmniejszyæ liczbê obliczeñ
 
 %% Ogólne parametry algorytmu
 % Horyzonty predykcji i sterowania
-N  = 50; 
-Nu = 50;
+N  = D; 
+Nu = D;
 
 % Pocz¹tkowa i koñcowa chwila symulacji
 kp = max(na,nb)+1+1;
-kk = 2000;
-dk = 200;
+kk = 20000;
+dk = 2000;
 
 % Wartoœci trajektorii zadanej
 yzad = zeros(ny,kk);
 for k=dk:dk:kk
     for m=1:ny
-        yzad(m,(k-(m-1)*dk/ny):end) = rand()-.5;
+        yzad(m,(k-(m-1)*dk/ny):end) = (rand()*2-1)*0.1;
     end
 end
 
@@ -87,6 +115,7 @@ Psi    = eye(N *ny)*1.0;
 % Wektory wartoœci sterowania oraz wyjœcia obiektu regulacji
 u = zeros(nu,kk);
 y = zeros(ny,kk);
+ys = zeros(ny,kk);
 
 %% Macierze wyznaczane offline
 % Macierz M
@@ -112,10 +141,10 @@ end
 Mp = cell2mat(Mp);
 
 % Macierz K
-K = (M'*Psi*M+Lambda)^(-1)*M';
+K = (M'*Psi*M+Lambda)^(-1)*M'*Psi;
 
 %% Macierze dla wersji minimalistycznej algorytmu
-Ku=K*Mp; Ku = Ku(1:nu,:);
+Ku=K(1:nu,:)*Mp;
 
 Ke=zeros(nu,1);
 for n=1:nu
@@ -123,6 +152,10 @@ for n=1:nu
         Ke(n,m) = sum(K(n,m:ny:end));
     end
 end
+
+%% Generacja macierzy
+dmc2x2_matlab_to_C
+
 %% Symulacja
 for k = kp:kk
     % symulacja obiektu regulacji
@@ -130,20 +163,20 @@ for k = kp:kk
         for n=1:nu
             for i=1:nb
                 if(k-i>=1)
-                    y(m,k) = y(m,k) + b(m,n,i)*u(n,k-i);
+                    ys(m,k) = ys(m,k) + b(m,n,i)*u(n,k-i);
                 end
             end
         end
         for i=1:na
             if(k-i>=1)
-                y(m,k) = y(m,k) - a(m,i)*y(m,k-i);
+                ys(m,k) = ys(m,k) - a(m,i)*ys(m,k-i);
             end
         end            
     end 
     
-    % wprowadzanie zak³óceñ
-    % for m=1:ny; y(m,k) = y(m,k) + (rand()-.5)/500; end;
-     
+    % wprowadzanie zak³óceñ    
+    y(:,k) = ys(:,k) + normrnd(mu,sigma)';
+    
     % wyznaczanie dUp
     dUpp = zeros(nu,D-1);
     for p = 1:(D-1)
@@ -170,7 +203,6 @@ for k = kp:kk
     du_diff(1:nu,k) = du-du_no;
     
     u(:,k) = u(:,k-1)+du;
-    
     for n=1:nu
         if(u(n,k)>umax); u(n,k) = umax; end
         if(u(n,k)<umin); u(n,k) = umin; end
@@ -178,6 +210,16 @@ for k = kp:kk
 end
 
 %% Rysownie przebiegów trajektorii wyjœcia, zadanej oraz sterowania
+% figure;
+% for m=1:ny
+%     subplot(ny,1,m)
+%     plot(y(m,:)','b'); hold on;
+%     stairs(yzad(m,:)','k--'); 
+%     stairs(u');
+%     hold off;
+% end
+% title('Wartoœci wyjœciowe i zadane w czasie');
+
 figure;
 plot(y'); hold on;
 stairs(yzad','k--'); hold off;
@@ -187,6 +229,6 @@ figure;
 stairs(u');
 title('Wartoœci sterowania w czasie');
 
-figure;
-stairs(du_diff');
-title('Wartoœci b³êdu w czasie');
+% figure;
+% stairs(du_diff');
+% title('Wartoœci b³êdu w czasie');

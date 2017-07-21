@@ -1,10 +1,4 @@
-% TODO !!!
 stuff = '';
-%clearvars;
-%load('gpc2x2_001');
-
-stuff = [stuff, sprintf('#define N %d\n',N)];
-stuff = [stuff, sprintf('#define Nu %d\n',Nu)];
 
 stuff = [stuff, sprintf('#define nu %d\n',nu)];
 stuff = [stuff, sprintf('#define ny %d\n',ny)];
@@ -33,5 +27,5 @@ for n=1:nu
 end
 stuff = [stuff, sprintf('};\n')];
 
-clipboard('copy', stuff);
 fprintf(stuff);
+clipboard('copy', stuff);

@@ -1,17 +1,37 @@
 %% Algorytm GPC 1x1 (benchmark)
-clearvars;
+clear all
 global N a b na nb u y kp kk
 close all
 
+mu   =-0.165315345000003*0;%,-0.065108360000001]*0;
+sigma= 0.001148139448443*0;%, 0.001082560427385]*0;
+
+obiekt_losowy = 0;
+
+
 %% Obiekt regulacji
-Gs = tf(1,[.7 1]);
-Gz = c2d(Gs,0.005);
-A = Gz.Denominator{1}(2);
-B = Gz.Numerator{1}(2);
-a = Gz.Denominator{1}(2:end);
-b = Gz.Numerator{1}(2:end);
-na= length(a);
-nb= length(b);
+if(obiekt_losowy == 0)
+    inercje = 1;
+    pobj = .7;
+    ppobj = [pobj 1];
+    for i=2:inercje
+        ppobj = conv([pobj 1], ppobj); %(pobj(m,n)*s+1)^n
+    end
+    Gs = tf(1,ppobj);
+    Tp = 0.005;
+    Gz = c2d(Gs,Tp,'zoh');
+    A = Gz.Denominator{1}(2);
+    B = Gz.Numerator{1}(2);
+    a = Gz.Denominator{1}(2:end);
+    b = Gz.Numerator{1}(1:end);
+    na= length(a);
+    nb= length(b);
+else
+    na = 5;
+    nb = 10; 
+    a = rand(1,na);
+    b = rand(1,nb);
+end
 
 % Ograniczenia
 umax =  1;
@@ -30,7 +50,7 @@ dk = 200;
 % Wartoœci trajektorii zadanej
 yzad = zeros(1,kk);
 for k=dk:dk:kk
-    yzad(k:end) = rand()-.5;
+    yzad(k:end) = (rand()*2-1)*0.1;
 end
 
 % Macierze Lambda oraz Psi -- wagi funkcji kosztów
@@ -40,6 +60,7 @@ Psi    = eye(N )*1.0;
 % Wektory wartoœci sterowania oraz wyjœcia obiektu regulacji
 u = zeros(1,kk);
 y = zeros(1,kk);
+ys = zeros(1,kk);
 
 %% Macierze wyznaczane offline
 % OdpowiedŸ skokowa
@@ -61,7 +82,7 @@ for row = 1:N
 end
 
 % Macierz K
-K = (M'*Psi*M+Lambda)^(-1)*M';
+K = (M'*Psi*M+Lambda)^(-1)*M'*Psi;
 
 %% Macierze dla wersji minimalistycznej algorytmu
 % Kyzad=zeros(1,1); % zakomentowane bo MATLAB marudzi
@@ -86,13 +107,18 @@ for i=0:na
 end
 Kyzad = sum(K(1,:));
 
+%% Generacja macierzy
+gpc1x1_matlab_to_C
+
 %% Symulacja
+du_diff = zeros(1,kk);
 for k = kp:kk
     % symulacja obiektu regulacji
-    y(k) = -a*y(k-(1:length(a)))+b*u(k-(1:length(b))); 
+    ys(k) = -a*ys(k-(1:length(a)))'+b*u(k-(1:length(b)))'; 
     
     % wprowadzanie zak³óceñ
     % y(k) = y(k) + (rand()-.5)/500;
+    y(k) = ys(k) + normrnd(mu,sigma);
             
     % wyznaczanie wyjœcia modelu
     ym = 0;
@@ -142,24 +168,25 @@ end
 %% Rysownie przebiegów trajektorii wyjœcia, zadanej oraz sterowania
 figure;
 plot(y'); hold on;
-stairs(yzad,'k--'); hold off;
+stairs(yzad','k--'); hold off;
 title('Wartoœci wyjœciowe i zadane w czasie');
 
 figure;
-stairs(u);
+stairs(u');
 title('Wartoœci sterowania w czasie');
 
-figure;
-stairs(du_diff);
-title('Wartoœci b³êdu w czasie');
+% figure;
+% stairs(du_diff);
+% title('Wartoœci b³êdu w czasie');
 
 %% Funkcje do wyznaczania minimalnej postaci algorytmu GPC
 function out = fun_g(p,j)
     % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
     global N a b na nb 
-    persistent G o
+    global G
+    
+    o = N;
     if(isempty(G))
-        o = N;
         G=cell(N,nb-1+o); 
         for p=1:N; for j=(1-p):(nb-1); fun_g(p,j); end; end
     end
@@ -193,9 +220,10 @@ end
 function out = fun_e(p,j)
     % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
     global N a b na nb 
-    persistent E o
+    global E
+    
+    o = 0;
     if(isempty(E))
-        o = 0;
         E=cell(N,nb+o); 
         for p=1:N; for j=(1-o):nb; fun_e(p,j); end; end
     end
@@ -220,9 +248,10 @@ end
 function out = fun_f(p,j)
     % wartoœci N, a, b, na, nb musz¹ ju¿ byæ w workspace'ie
     global N a b na nb 
-    persistent F o
+    global F
+    
+    o = 1;
     if(isempty(F))
-        o = 1;
         F=cell(N,na+o);
         for p=1:N; for j=(1-o):na; fun_f(p,j); end; end
     end
