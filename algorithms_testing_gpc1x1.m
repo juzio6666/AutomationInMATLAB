@@ -4,7 +4,7 @@ global N a b na nb u y kp kk
 close all
 
 mu   =-0.165315345000003*0;%,-0.065108360000001]*0;
-sigma= 0.001148139448443*0;%, 0.001082560427385]*0;
+sigma= 0.001148139448443*1;%, 0.001082560427385]*0;
 
 obiekt_losowy = 0;
 
@@ -49,9 +49,14 @@ dk = 200;
 
 % Wartoœci trajektorii zadanej
 yzad = zeros(1,kk);
-for k=dk:dk:kk
-    yzad(k:end) = (rand()*2-1)*0.1;
-end
+% for k=dk:dk:kk
+%     yzad(k:end) = (rand()*2-1)*0.1;
+% end
+yzad(100:end) = -.1;
+yzad(500:end) =  .1;
+yzad(900:end) = -.3;
+yzad(1300:end) = .2;
+yzad(1700:end) = .0;
 
 % Macierze Lambda oraz Psi -- wagi funkcji kosztów
 Lambda = eye(Nu)*1.0;
@@ -119,6 +124,7 @@ for k = kp:kk
     % wprowadzanie zak³óceñ
     % y(k) = y(k) + (rand()-.5)/500;
     y(k) = ys(k) + normrnd(mu,sigma);
+    %y(k) = ys(k);
             
     % wyznaczanie wyjœcia modelu
     ym = 0;
@@ -167,17 +173,18 @@ end
 
 %% Rysownie przebiegów trajektorii wyjœcia, zadanej oraz sterowania
 figure;
-plot(y'); hold on;
-stairs(yzad','k--'); hold off;
+plot((0:(kk-1))*Tp,y'); hold on;
+stairs((0:(kk-1))*Tp,yzad','k--'); hold off;
 title('Wartoœci wyjœciowe i zadane w czasie');
 
 figure;
-stairs(u');
+stairs((0:(kk-1))*Tp,u');
 title('Wartoœci sterowania w czasie');
 
 % figure;
 % stairs(du_diff);
 % title('Wartoœci b³êdu w czasie');
+csvwrite('../LaTeX/DUNNO_Pomiar_czasu_algorytmow_regulacji/dane/gpc1x1simdist.csv',[((1:2000)'-1)*Tp y' yzad' u']);
 
 %% Funkcje do wyznaczania minimalnej postaci algorytmu GPC
 function out = fun_g(p,j)

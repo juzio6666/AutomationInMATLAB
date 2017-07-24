@@ -15,3 +15,4 @@ nb = [1:7,10];
 
 [NA,NB]=meshgrid(na,nb);
 surface(NA,NB,times);
+csvwrite('../LaTeX/DUNNO_Pomiar_czasu_algorytmow_regulacji/dane/gpc2x2time.csv',[NA, NB, times]);

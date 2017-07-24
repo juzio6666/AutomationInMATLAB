@@ -14,7 +14,7 @@ fopen(s); % otwarcie kanalu komunikacyjnego
 Tp = 0.005; % czas z jakim probkuje regulator
 y = [];    % wektor wyjsc obiektu
 z = [];    % wektor wyjsc obiektu6
-u = [];    % wektor wejsc (sterowan) obiektu
+u = [];    % wektor wejsc (sterowan) oiektu
 
 while length(y)~=2000    % zbieramy 100 pomiarow
     txt = fread(s,84);  % odczytanie z portu szeregowego

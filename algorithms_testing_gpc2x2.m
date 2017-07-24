@@ -4,14 +4,14 @@ global N a b na nb nu ny
 %close all
 
 mu   =[-0.165315345000003,-0.065108360000001]*0;
-sigma=[ 0.001148139448443, 0.001082560427385]*0;
+sigma=[ 0.001148139448443, 0.001082560427385]*1;
 
 obiekt_losowy = 0;
 ny = 2;
 nu = 2;
 %% Obiekt regulacji
 if(obiekt_losowy == 0)
-    inercje = 2;
+    inercje = 1;
 
     pobj = [.7, .3; .5, .4];
     ppobj = cell(2,2);
@@ -74,12 +74,23 @@ dk = 200;
 
 % Wartoœci trajektorii zadanej
 yzad = zeros(ny,kk);
-for k=dk:dk:kk
-    for m=1:ny
-        yzad(m,(k-(m-1)*dk/ny):end) = (rand()*2-1)*0.1;
-    end
-end
+% for k=dk:dk:kk
+%     for m=1:ny
+%         yzad(m,(k-(m-1)*dk/ny):end) = (rand()*2-1)*0.1;
+%     end
+% end
+yzad(1, 100:end) = -.1;
+yzad(1, 500:end) =  .1;
+yzad(1, 900:end) = -.3;
+yzad(1,1300:end) =  .2;
+yzad(1,1700:end) =  .0;
 
+yzad(2, 300:end) = -.1;
+yzad(2, 700:end) = -.2;
+yzad(2,1100:end) =  .1;
+yzad(2,1500:end) = -.2;
+yzad(2,1900:end) =  .0;                             
+    
 % Macierze Lambda oraz Psi -- wagi funkcji kosztów
 Lambda = eye(Nu*nu)*1.0;
 Psi    = eye(N *ny)*1.0;
@@ -191,6 +202,7 @@ for k = kp:kk
     
     % wprowadzanie zak³óceñ    
     y(:,k) = ys(:,k) + normrnd(mu,sigma)';
+    %y(:,k) = ys(:,k) + ones(ny,1)*normrnd(mu(1),sigma(1))';
      
     % wyznaczanie wyjœcia modelu
     ym = zeros(ny,1);
@@ -295,6 +307,7 @@ figure;
 stairs(u');
 title('Wartoœci sterowania w czasie');
 
+csvwrite('../LaTeX/DUNNO_Pomiar_czasu_algorytmow_regulacji/dane/gpc2x2simdist.csv',[((1:2000)'-1)*Tp y' yzad' u']);
 % figure;
 % stairs(du_diff');
 % title('Wartoœci b³êdu w czasie');

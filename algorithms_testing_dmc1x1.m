@@ -4,7 +4,7 @@ clear all
 close all
 
 mu   =-0.165315345000003*0;%,-0.065108360000001]*0;
-sigma= 0.001148139448443*0;%, 0.001082560427385]*0;
+sigma= 0.001148139448443*1;%, 0.001082560427385]*0;
 
 obiekt_losowy = 0;
 
@@ -63,9 +63,14 @@ dk = 200;
 
 % Wartoœci trajektorii zadanej
 yzad = zeros(1,kk);
-for k=dk:dk:kk
-    yzad(k:end) = (rand()*2-1)*0.1;
-end
+% for k=dk:dk:kk
+%     yzad(k:end) = (rand()*2-1)*0.1;
+% end
+yzad(100:end) = -.1;
+yzad(500:end) =  .1;
+yzad(900:end) = -.3;
+yzad(1300:end) = .2;
+yzad(1700:end) = .0;
 
 % Macierze Lambda oraz Psi -- wagi funkcji kosztów
 Lambda = eye(Nu)*1.0;
@@ -153,6 +158,8 @@ title('Wartoœci wyjœciowe i zadane w czasie');
 figure;
 stairs(u');
 title('Wartoœci sterowania w czasie');
+
+csvwrite('../LaTeX/DUNNO_Pomiar_czasu_algorytmow_regulacji/dane/dmc1x1simdist.csv',[((1:2000)'-1)*Tp y' yzad' u']);
 
 % figure;
 % stairs(du_diff);
