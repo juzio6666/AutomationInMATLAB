@@ -4,7 +4,7 @@ global N a b na nb u y kp kk
 close all
 
 mu   =-0.165315345000003*0;%,-0.065108360000001]*0;
-sigma= 0.001148139448443*1;%, 0.001082560427385]*0;
+sigma= 0.001148139448443*0;%, 0.001082560427385]*0;
 
 obiekt_losowy = 0;
 
@@ -26,21 +26,28 @@ if(obiekt_losowy == 0)
     b = Gz.Numerator{1}(1:end);
     na= length(a);
     nb= length(b);
-else
+elseif(obiekt_losowy == 1)
     na = 5;
     nb = 10; 
     a = rand(1,na);
     b = rand(1,nb);
+else
+    load('parametry');
+    len=80;
+    a = -B_app(1:len);
+    b = B_app((len+1):end);
+    na= length(a);
+    nb= length(b);
 end
 
 % Ograniczenia
-umax =  1;
-umin = -1;
+umax =  Inf;%1;
+umin = -Inf;%1;
 
 %% Ogólne parametry algorytmu
 % Horyzonty predykcji i sterowania
-N  = 50; 
-Nu = 50;
+N  = 100; 
+Nu = 100;
 
 % Pocz¹tkowa i koñcowa chwila symulacji
 kp = max(na,nb)+1+1;
