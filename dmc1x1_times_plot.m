@@ -5,7 +5,7 @@ X=[ones(length(D),1),D'];
 A=X\times';
 
 plot(D,times); hold on;
-x = D;
+x = 1:0.1:1000;
 approx=[ones(size(x))',x']*A;
 plot(x,approx); hold off;
 csvwrite('../LaTeX/DUNNO_Pomiar_czasu_algorytmow_regulacji/dane/dmc1x1time.csv',[D' times' approx]);
