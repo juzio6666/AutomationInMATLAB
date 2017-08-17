@@ -6,9 +6,11 @@ close all
 mu   =-0.165315345000003*0;%,-0.065108360000001]*0;
 sigma= 0.001148139448443*0;%, 0.001082560427385]*0;
 
-obiekt_losowy = 0;
+obiekt_losowy = 2;
 
 
+Ybias=0;
+Ubias=0;
 %% Obiekt regulacji
 if(obiekt_losowy == 0)
     inercje = 1;
@@ -32,10 +34,16 @@ elseif(obiekt_losowy == 1)
     a = rand(1,na);
     b = rand(1,nb);
 else
-    load('parametry');
-    len=80;
-    a = -B_app(1:len);
-    b = B_app((len+1):end);
+    load('servo_model');
+    Gs = tf(X(1),[X(2) 1]);
+    Ybias=X(3);
+    Ubias=X(4);
+    Tp = 0.01;
+    Gz = c2d(Gs,Tp,'zoh');
+    A = Gz.Denominator{1}(2);
+    B = Gz.Numerator{1}(2);
+    a = Gz.Denominator{1}(2:end);
+    b = Gz.Numerator{1}(1:end);
     na= length(a);
     nb= length(b);
 end
