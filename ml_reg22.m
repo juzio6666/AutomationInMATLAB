@@ -35,7 +35,7 @@ bs(2,2,1)=B22; bs(2,2,2)=B22*A21;
 
 %model=obiekt
 %macierz ci¹g³ych transmitancji -> macierz dyskretnych transmitancji
-Tp=0.005;%okres próbkowania
+Tp=0.0001;%okres próbkowania
 K=1; T=0.7; alfa=exp(-Tp/T); B11=K*(1-alfa); A11=-alfa; % G11=1/0,7s+1
 K=5; T=0.3; alfa=exp(-Tp/T); B12=K*(1-alfa); A12=-alfa; % G12=5/0,3s+1
 K=1; T=0.5; alfa=exp(-Tp/T); B21=K*(1-alfa); A21=-alfa; % G21=1/0,5s+1

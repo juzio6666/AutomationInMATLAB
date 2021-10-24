@@ -4,7 +4,7 @@ global N a b na nb nu ny
 %close all
 
 mu   =[-0.165315345000003,-0.065108360000001]*0;
-sigma=[ 0.001148139448443, 0.001082560427385]*1;
+sigma=[ 0.001148139448443, 0.001082560427385]*0;
 
 obiekt_losowy = 0;
 ny = 2;
@@ -64,7 +64,7 @@ umin = -1;
 
 %% Ogólne parametry algorytmu
 % Horyzonty predykcji i sterowania
-N  = 500; 
+N  = 50; 
 Nu = 50;
 
 % Pocz¹tkowa i koñcowa chwila symulacji
@@ -259,7 +259,7 @@ for k = kp:kk
     du = zeros(nu,1);
     for r=1:nu
         for m=1:ny
-            du(r) = du(r) + Kyzad(r,m)*yzad(m,k);
+            du(r) = du(r) + Kyzad(r,m)*(yzad(m,k)-y(m,k));
         end
         for n=1:nu
             for j=1:nb

@@ -4,9 +4,9 @@ clear all
 close all
 
 mu   =-0.165315345000003*0;%,-0.065108360000001]*0;
-sigma= 0.001148139448443*1;%, 0.001082560427385]*0;
+sigma= 0.001148139448443*0;%, 0.001082560427385]*0;
 
-obiekt_losowy = 0;
+obiekt_losowy = 1;
 
 
 %% Obiekt regulacji
@@ -19,6 +19,19 @@ if(obiekt_losowy == 0)
         ppobj = conv([pobj 1], ppobj); %(pobj(m,n)*s+1)^n
     end
     Gs = tf(1,ppobj);
+    Gz = c2d(Gs,Tp,'zoh');
+    A = Gz.Denominator{1}(2);
+    B = Gz.Numerator{1}(2);
+    a = Gz.Denominator{1}(2:end);
+    b = Gz.Numerator{1}(2:end);
+    na= length(a);
+    nb= length(b);
+elseif(obiekt_losowy == 1)
+    Tp=0.01;
+    K=0.9690;
+    T1=0.032857;
+    T2=0.331948;
+    Gs=tf(K,[T1*T2,T1+T2,1]);
     Gz = c2d(Gs,Tp,'zoh');
     A = Gz.Denominator{1}(2);
     B = Gz.Numerator{1}(2);
@@ -40,7 +53,7 @@ umin = -1;
 
 % OdpowiedŸ skokowa
 S = step(Gz);
-S = S(1:end); % usuwanie pierwszego elementu odpowiedzi skokowej -- KONIECZNE!
+S = S(1:end); % usuwanie pierwszego elementu odpowiedzi skokowej -- KONIECZNE! pod warunkiem, ¿e czas regulacji jest znikomy w stosunku do okresu próbkowania
 SS = S;
 DD = length(S);
 D = 1000;
@@ -48,8 +61,7 @@ if(DD<D)
     S(DD:D)=S(DD);
 else
     S=S(1:D);
-end
-%D = min(D,200); % nadpisujê ¿eby zmniejszyæ liczbê obliczeñ
+end 
 
 %% Ogólne parametry algorytmu
 % Horyzonty predykcji i sterowania
@@ -159,8 +171,4 @@ figure;
 stairs(u');
 title('Wartoœci sterowania w czasie');
 
-csvwrite('../LaTeX/DUNNO_Pomiar_czasu_algorytmow_regulacji/dane/dmc1x1simdist.csv',[((1:2000)'-1)*Tp y' yzad' u']);
-
-% figure;
-% stairs(du_diff);
-% title('Wartoœci b³êdu w czasie');
+% csvwrite('../LaTeX/DUNNO_Pomiar_czasu_algorytmow_regulacji/dane/dmc1x1simdist.csv',[((1:2000)'-1)*Tp y' yzad' u']);
